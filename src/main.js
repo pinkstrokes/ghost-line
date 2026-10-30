@@ -25,6 +25,9 @@ engine.setTargetHeight(settings.pixel);
 const input = new Input(canvas);
 const hud = new Hud(document.getElementById('hud'));
 
+// browsers only start audio after a user gesture (matters after an auto-rejoin on refresh)
+for (const ev of ['pointerdown', 'keydown']) document.addEventListener(ev, () => sfx.init(), { passive: true });
+
 const app = { net: null, role: null, code: null, state: null, game: null, voice: null, mission: null, missionKey: null };
 window.__gl = app;
 
