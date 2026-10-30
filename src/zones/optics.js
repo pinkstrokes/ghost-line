@@ -92,11 +92,11 @@ export function buildOptics(world) {
     const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
     const plaqueMat = new THREE.MeshStandardMaterial({ map: tex });
     for (let k = 0; k < 4; k++) {
-      const pl = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.06), plaqueMat);
+      const pl = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.1), plaqueMat);
       const a = (k * Math.PI) / 2;
-      pl.position.set(Math.sin(a) * 0.272, 0.62, Math.cos(a) * 0.272);
+      pl.position.set(Math.sin(a) * 0.3, 0.6, Math.cos(a) * 0.3);
       pl.rotation.y = a;
-      pl.rotation.x = -0.13;
+      pl.rotation.x = -0.066;
       g.add(pl);
     }
     g.add(base, collar, head);
@@ -107,7 +107,8 @@ export function buildOptics(world) {
     head.rotation.y = ped.cur;
     world.addInteractable({
       pos: new THREE.Vector3(p.x, 1.1, p.z), size: [0.75, 1.0, 0.75], zone: 'optics',
-      label: () => `MIRROR ${m.letter}   [E] ⟳ 顺时针   [Q] ⟲ 逆时针`,
+      label: () => `MIRROR ${m.letter}    [E] ⟳ 顺时针    [Q] ⟲ 逆时针`,
+      rawPrompt: true,
       enabled: () => !world.state?.optics?.done,
       use: () => { world.act({ k: 'rotate', m: idx, d: -1 }); world.sfx?.ratchet(g.position); },
       alt: () => { world.act({ k: 'rotate', m: idx, d: 1 }); world.sfx?.ratchet(g.position); },

@@ -301,7 +301,8 @@ export class AgentView {
       if (cand && (!cand.enabled || cand.enabled())) { it = cand; break; }
     }
     this.focus = it;
-    this.hud.prompt(it ? `[E] ${typeof it.label === 'function' ? it.label() : it.label}` : '');
+    const lbl = it ? (typeof it.label === 'function' ? it.label() : it.label) : '';
+    this.hud.prompt(it ? (it.rawPrompt ? lbl : `[E] ${lbl}`) : '');
     if (it && this.input.hit('KeyE')) {
       if (it.inspect) this.enterInspect(it);
       else if (it.use) it.use();
