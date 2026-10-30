@@ -14,6 +14,10 @@ GHOST 看得到机关的细节，但不知道怎么解；LINE 知道怎么解、
 | ![配线架](docs/screens/ghost-patch-frame.png) | ![蓝图 E-1](docs/screens/blueprint-E1.png) |
 | ![金库转盘](docs/screens/ghost-vault-dial.png) | ![GHOST 在服务门前](docs/screens/ghost-gate.png) |
 
+## 在线版
+
+https://us.pinkstrokes.com （Hetzner，Caddy 反代 + 自建 coturn 语音中继，隔着互联网也能用游戏内语音）。改完代码 `scripts/deploy.sh` 重新部署。
+
 ## 开始玩
 
 需要 Node.js 20+。
