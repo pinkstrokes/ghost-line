@@ -233,6 +233,11 @@ export class Voice {
     this.level += (lv - this.level) * Math.min(1, dt * 15);
     const il = this.rms(this.inAn);
     this.inLevel += (il - this.inLevel) * Math.min(1, dt * 18);
+    // if the AudioContext isn't running (autoplay policy, device hiccup) fall back to plain playback
+    if (this.audioEl) {
+      const plain = !this.sfx.ctx || this.sfx.ctx.state !== 'running';
+      if (this.audioEl.muted === plain) { this.audioEl.muted = !plain; this.audioEl.volume = Math.min(1, this.sfx.vol.voice * this.sfx.vol.master); if (plain) this.audioEl.play().catch(() => {}); }
+    }
     if (this.hiss && this.sfx.ctx) this.hiss.gain.setTargetAtTime(this.remoteTx || this.mode === 'open' ? 0.018 : 0, this.sfx.ctx.currentTime, 0.05);
     if (this.onLevel) this.onLevel(this.level || this.rms(this.micAn));
     if (this.hud) {
