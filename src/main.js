@@ -2,6 +2,7 @@ import { Engine } from './engine/renderer.js';
 import { Input } from './engine/input.js';
 import { WsNet, LocalNet } from './net/net.js';
 import { Voice } from './net/voice.js';
+Voice.loadConfig();
 import { Hud } from './ui/hud.js';
 import { sfx } from './audio/sfx.js';
 import { generateMission } from '../shared/mission.js';

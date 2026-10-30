@@ -3,6 +3,12 @@
 // a band-pass + soft clip "radio" chain with a hiss bed and squelch clicks.
 
 export class Voice {
+  static iceServers = [];
+  // fetched once from our own server (TURN credentials when it is hosted online)
+  static async loadConfig() {
+    try { const r = await fetch('/config'); if (r.ok) Voice.iceServers = (await r.json()).iceServers || []; } catch { /* LAN / dev: none */ }
+  }
+
   constructor({ net, role, sfx, hud, mode = 'hold', getState }) {
     this.net = net; this.role = role; this.sfx = sfx; this.hud = hud;
     this.getState = getState;
@@ -108,7 +114,7 @@ export class Voice {
 
   makePeer(sid) {
     this.closePeer();
-    const pc = (this.pc = new RTCPeerConnection({ iceServers: [] }));
+    const pc = (this.pc = new RTCPeerConnection({ iceServers: Voice.iceServers }));
     this.pcAt = performance.now();
     this.sid = sid;
     pc.onicecandidate = (e) => { if (e.candidate) this.net.send({ t: 'rtc', d: { type: 'ice', sid, c: e.candidate } }); };

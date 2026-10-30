@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { execFileSync } from 'node:child_process';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import { Room, ROLES } from '../shared/room.js';
@@ -23,7 +24,18 @@ const MIME = {
   '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.woff2': 'font/woff2',
 };
 
+// ICE servers for voice. LAN needs none; across the internet set TURN_URLS + TURN_SECRET
+// (coturn `use-auth-secret`), and each client gets short-lived credentials.
+function iceConfig() {
+  const urls = (process.env.TURN_URLS || '').split(',').map((s) => s.trim()).filter(Boolean);
+  if (!urls.length || !process.env.TURN_SECRET) return { iceServers: [] };
+  const username = `${Math.floor(Date.now() / 1000) + 12 * 3600}:ghostline`;
+  const credential = crypto.createHmac('sha1', process.env.TURN_SECRET).update(username).digest('base64');
+  return { iceServers: [{ urls, username, credential }] };
+}
+
 function serveStatic(req, res) {
+  if (req.url === '/config') { res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(JSON.stringify(iceConfig())); return; }
   if (DEV) { res.writeHead(200, { 'content-type': 'text/plain' }); res.end('GHOST LINE dev server: open the Vite URL instead.'); return; }
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   if (p === '/') p = '/index.html';
