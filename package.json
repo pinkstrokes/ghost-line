@@ -1,0 +1,22 @@
+{
+  "name": "ghost-line",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Two-player voice co-op infiltration game: GHOST goes in, LINE watches from the van.",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "vite build",
+    "start": "vite build && node server/index.js",
+    "serve": "node server/index.js",
+    "verify": "node scripts/verify.mjs"
+  },
+  "dependencies": {
+    "three": "0.187.0",
+    "ws": "8.22.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.64.1",
+    "vite": "8.3.5"
+  }
+}
