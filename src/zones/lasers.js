@@ -54,9 +54,9 @@ export function buildLasers(world) {
   // ceiling pipes, tray, fixtures
   pipeRun(B, x0 + 0.25, h - 0.25, -0.6, x0 + 0.25, -26.8, { r: 0.08 });
   pipeRun(B, x1 - 0.25, h - 0.3, -0.6, x1 - 0.25, -26.8, { r: 0.06, color: PAL.pipeRed });
-  cableTray(B, 0.9, h - 0.12, -0.6, 0.9, -26.8);
+  cableTray(B, 1.55, h - 0.12, -0.6, 1.55, -26.8);
   const fz = [-2.5, -6.5, -10.5, -14.5, -18.5, -22.5, -25.8];
-  fz.forEach((z, i) => fixture(B, -0.2, h - 0.02, z, { dead: i === 3, flicker: i === 1 || i === 5 ? 0.6 : 0, intensity: 1.6, distance: 7.5, room: 'lasers' }));
+  fz.forEach((z, i) => fixture(B, i % 2 ? 1.25 : -1.25, h - 0.02, z, { dead: i === 3, flicker: i === 1 || i === 5 ? 0.6 : 0, intensity: 1.6, distance: 7.5, room: 'lasers' }));
   emergencyLamp(B, x0 + 0.08, 2.6, -13, Math.PI / 2, { room: 'lasers', intensity: 0.5 });
   // control box at the start: hint that a grid is armed
   B.box(x1 - 0.1, 1.45, -1.4, 0.16, 0.5, 0.4, 0x8e8c80, { bevel: 0.02 });

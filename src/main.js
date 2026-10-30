@@ -170,21 +170,19 @@ function attachNet(net) {
     if (app.game) app.game.world.setState(m.s);
     if (!prev || prev.phase !== m.s.phase || prev.seed !== m.s.seed || prev.difficulty !== m.s.difficulty || m.s.phase === 'lobby') render();
   });
-  net.on('ev', (m) => {
-    if (m.e.k === 'start' && app.state) render(true);
-  });
+
 }
 
-function render(force) {
+function render() {
   const s = app.state;
   if (!s || !app.role) return;
-  if (s.phase === 'lobby') { teardownGame(); lobbyScreen(); return; }
+  if (s.phase === 'lobby') { app.startToken = (app.startToken || 0) + 1; app.missionKey = null; teardownGame(); lobbyScreen(); return; }
   if (s.phase === 'playing') {
-    const key = `${s.seed}|${s.difficulty}|${s.startAt}`;
-    if (!app.game || app.missionKey !== key || force) startGame(key);
+    const key = `${s.seed}|${s.difficulty}|${s.startAt}|${app.role}`;
+    if (app.missionKey !== key) startGame(key);
     return;
   }
-  if (s.phase === 'won' || s.phase === 'lost') endScreen();
+  if (s.phase === 'won' || s.phase === 'lost') { app.startToken = (app.startToken || 0) + 1; app.missionKey = null; endScreen(); }
 }
 
 // ---------------------------------------------------------------- lobby
@@ -254,27 +252,28 @@ function ensureVoice() {
 // ---------------------------------------------------------------- game
 let raf = 0;
 async function startGame(key) {
+  // one build at a time: a newer call (or a teardown) invalidates older ones mid-await
+  const token = (app.startToken = (app.startToken || 0) + 1);
+  app.missionKey = key;
   teardownGame();
   html(`<div class="screen"><div class="card"><p class="subtitle">BUILDING ${esc(app.state.seed)}…</p></div></div>`);
   await new Promise((r) => setTimeout(r, 30));
+  if (token !== app.startToken) return;
   const s = app.state;
   const mission = generateMission(s.seed, s.difficulty);
   app.mission = mission;
-  app.missionKey = key;
   const { FacilityWorld } = await import('./facility/world.js');
+  if (token !== app.startToken) return;
   const world = new FacilityWorld(mission, { role: app.role });
   world.serverTime = () => app.net.serverNow();
   world.sfx = sfx;
   world.setState(s);
   ensureVoice();
-  let view;
-  if (app.role === 'agent') {
-    const { AgentView } = await import('./facility/agent.js');
-    view = new AgentView({ engine, world, input, net: app.net, hud, settings });
-  } else {
-    const { HandlerView } = await import('./van/handler.js');
-    view = new HandlerView({ engine, world, input, net: app.net, hud, settings, voice: app.voice });
-  }
+  const mod = app.role === 'agent' ? await import('./facility/agent.js') : await import('./van/handler.js');
+  if (token !== app.startToken) return;
+  const view = app.role === 'agent'
+    ? new mod.AgentView({ engine, world, input, net: app.net, hud, settings })
+    : new mod.HandlerView({ engine, world, input, net: app.net, hud, settings, voice: app.voice });
   app.game = { world, view };
   app.voice.attach(view);
   html('');
@@ -292,6 +291,7 @@ async function startGame(key) {
   input.onLockChange = (locked) => { hud.paused(!locked && !view.inspect && !view.focus && app.state?.phase === 'playing' && !view.wantsCursor); };
   canvas.onclick = () => { if (!view.inspect && !view.wantsCursor) input.lock(); };
   input.lock();
+  setTimeout(() => hud.paused(!input.locked && !view.inspect && !view.wantsCursor), 4300);
   if (settings.ptt !== 'off') app.voice.enable();
   let last = performance.now();
   const loop = (now) => {

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { LAYER } from './world.js';
 import { PAL } from '../engine/kit.js';
-import { AGENT_SPAWN, zoneOf, ZONES } from '../../shared/layout.js';
+import { AGENT_SPAWN, zoneOf, ZONES, practiceSpawn } from '../../shared/layout.js';
 import { sfx } from '../audio/sfx.js';
 import { fmtTime, OBJECTIVES } from '../ui/text.js';
 
@@ -13,9 +13,10 @@ export class AgentView {
     this.cam = new THREE.PerspectiveCamera(72, 1, 0.05, 220);
     this.cam.layers.set(LAYER.WORLD); this.cam.layers.enable(LAYER.FP); this.cam.layers.enable(LAYER.SMOKE);
     world.scene.add(this.cam);
-    this.pos = new THREE.Vector3(AGENT_SPAWN.x, 0, AGENT_SPAWN.z);
+    const sp = world.state?.practice ? practiceSpawn(world.state.practice, world.mission) : AGENT_SPAWN;
+    this.pos = new THREE.Vector3(sp.x, 0, sp.z);
     this.vel = new THREE.Vector3();
-    this.yaw = AGENT_SPAWN.yaw; this.pitch = 0;
+    this.yaw = sp.yaw; this.pitch = 0;
     this.crouch = 0; this.crouching = false; this.vy = 0; this.grounded = true;
     this.flashOn = true; this.bob = 0; this.stepAcc = 0;
     this.inspect = null; this.tween = null;

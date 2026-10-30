@@ -21,6 +21,15 @@ export const ZONES = {
 };
 
 export const AGENT_SPAWN = { x: 0, z: 14, yaw: 0 };
+// where GHOST starts when a practice run skips ahead (yaw 0 = facing north)
+export function practiceSpawn(zone, mission) {
+  const exitX = -33 + (mission?.maze?.exitCol ?? 0) * 3 + 1.5;
+  return {
+    gate: { x: 0, z: 14, yaw: 0 }, lasers: { x: 0, z: -1.4, yaw: 0 }, patch: { x: 0, z: -28.6, yaw: 0 },
+    maze: { x: -8.3, z: -33, yaw: Math.PI / 2 }, optics: { x: exitX, z: -49.6, yaw: 0 },
+    vault: { x: -15.2, z: -56, yaw: -Math.PI / 2 }, escape: { x: -10, z: -65, yaw: -Math.PI / 2 },
+  }[zone] || AGENT_SPAWN;
+}
 
 // Laser hall
 export const HALL = { x0: -2, x1: 2, zStart: -3, zEnd: -27, lanes: ['A', 'B', 'C', 'D'], rowLen: 2 };
@@ -58,7 +67,7 @@ export const CAMERAS = [
   // id, position, look-at target, ir capability, ptz, zone
   { id: 'CAM-01', label: 'YARD / SERVICE ENTRY', pos: [-6.5, 4.2, 1.2], look: [2.5, 0.4, 7.5], ir: false, ptz: true, zone: 'gate' },
   { id: 'CAM-02', label: 'HALL 2 / NORTH END', pos: [0, 3.0, -26.6], look: [0, 0.6, -6], ir: true, ptz: false, zone: 'lasers' },
-  { id: 'CAM-03', label: 'HALL 2 / SOUTH CORNER', pos: [1.85, 3.05, -0.5], look: [-0.4, 0.4, -16], ir: true, ptz: true, zone: 'lasers' },
+  { id: 'CAM-03', label: 'HALL 2 / SOUTH END', pos: [0, 3.0, -0.55], look: [0, 0.2, -12.5], ir: true, ptz: true, zone: 'lasers' },
   { id: 'CAM-04', label: 'SUBSTATION', pos: [-6.6, 3.9, -27.4], look: [4, 0.8, -35], ir: false, ptz: true, zone: 'patch' },
   { id: 'CAM-05', label: 'UNDERCROFT / BULKHEAD C', pos: [-7.4, 2.3, -31.6], look: [-12, 0.5, -33.6], ir: true, ptz: false, zone: 'maze' },
   { id: 'CAM-06', label: 'OPTICS / CEILING', pos: [-26, 5.85, -56.2], look: [-26, 0, -56.0], ir: true, ptz: false, zone: 'optics', roll: Math.PI / 2, fov: 104 },
