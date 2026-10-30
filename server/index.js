@@ -106,7 +106,7 @@ function attach(server) {
         entry = target;
         entry.conns.add(ws);
         entry.room.join(role, msg.name, ws);
-        reply({ t: 'joined', code: entry.room.code, role });
+        reply({ t: 'joined', code: entry.room.code, role, pose: role === 'agent' && entry.room.state.phase === 'playing' ? entry.room.pose : null });
         reply(entry.room.snapshot());
         entry.room.flush();
         return;

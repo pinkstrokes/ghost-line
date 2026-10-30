@@ -161,12 +161,22 @@ function attachNet(net) {
   if (app.net && app.net !== net) app.net.close();
   app.net = net;
   sfx.init();
-  net.on('error', (m) => titleScreen(m.m));
+  net.on('error', (m) => { forgetSession(); titleScreen(m.m); });
   net.on('closed', () => { if (app.net === net) titleScreen('连接断开了'); });
-  net.on('joined', (m) => { app.role = m.role; app.code = m.code; if (app.state) render(); });
+  net.on('joined', (m) => {
+    app.role = m.role; app.code = m.code; app.resumePose = m.pose || null;
+    if (!(net instanceof LocalNet)) try { sessionStorage.setItem('ghostline.session', JSON.stringify({ code: m.code, role: m.role })); } catch { /* */ }
+    if (app.state) render();
+  });
   net.on('state', (m) => {
     const prev = app.state;
     app.state = m.s;
+    if (prev && m.s.phase === 'playing' && app.game) {
+      const other = app.role === 'agent' ? 'handler' : 'agent';
+      const was = prev.players[other]?.connected, now = m.s.players[other]?.connected;
+      if (was && !now) hud.toast(`${other === 'agent' ? 'GHOST' : 'LINE'} 掉线了 — 等 TA 用同一个代码重新加入`, 'bad');
+      if (!was && now && prev.players[other]) hud.toast(`${other === 'agent' ? 'GHOST' : 'LINE'} 重新连上了`, 'good');
+    }
     if (app.game) app.game.world.setState(m.s);
     if (!prev || prev.phase !== m.s.phase || prev.seed !== m.s.seed || prev.difficulty !== m.s.difficulty || m.s.phase === 'lobby') render();
   });
@@ -227,7 +237,7 @@ function lobbyScreen() {
   on('#swap', 'click', () => app.net.send({ t: 'swap', name: settings.name }));
   on('#ready', 'click', () => app.net.send({ t: 'ready', v: !s.players[me]?.ready }));
   on('#start', 'click', () => app.net.send({ t: 'start', difficulty: s.difficulty, practice: $overlay.querySelector('#practice').value || null }));
-  on('#leave', 'click', () => { app.net.close(); app.net = null; app.state = null; titleScreen(); });
+  on('#leave', 'click', () => { forgetSession(); app.net.close(); app.net = null; app.state = null; titleScreen(); });
   on('#howto', 'click', () => howToScreen(lobbyScreen));
   on('#settings', 'click', () => settingsScreen(lobbyScreen));
   on('#radio', 'click', async () => {
@@ -288,10 +298,10 @@ async function startGame(key) {
   hud.show(true);
   hud.crosshair(true);
   hud.radio(settings.ptt === 'off' ? 'off' : '');
-  input.onLockChange = (locked) => { hud.paused(!locked && !view.inspect && !view.focus && app.state?.phase === 'playing' && !view.wantsCursor); };
+  input.onLockChange = (locked) => { hud.paused(!locked && !view.inspect && !view.focus && app.state?.phase === 'playing' && !view.wantsCursor && !$overlay.innerHTML); };
   canvas.onclick = () => { if (!view.inspect && !view.wantsCursor) input.lock(); };
   input.lock();
-  setTimeout(() => hud.paused(!input.locked && !view.inspect && !view.wantsCursor), 4300);
+  setTimeout(() => { if (app.game?.view === view) hud.paused(!input.locked && !view.inspect && !view.wantsCursor && !view.focus); }, 4300);
   if (settings.ptt !== 'off') app.voice.enable();
   let last = performance.now();
   const loop = (now) => {
@@ -353,7 +363,7 @@ function endScreen() {
     <div class="row"><button class="primary" id="again" style="flex:1">再来一次 NEW MISSION</button><button id="leave" style="flex:1">离开</button></div>
   </div></div>`);
   on('#again', 'click', () => app.net.send({ t: 'lobby' }));
-  on('#leave', 'click', () => { app.net.close(); app.net = null; app.state = null; titleScreen(); });
+  on('#leave', 'click', () => { forgetSession(); app.net.close(); app.net = null; app.state = null; titleScreen(); });
 }
 
 document.addEventListener('keydown', (e) => {
@@ -372,6 +382,8 @@ function pauseMenu() {
   on('#abort', 'click', () => { html(''); app.net.send({ t: 'lobby' }); });
 }
 
+function forgetSession() { try { sessionStorage.removeItem('ghostline.session'); } catch { /* */ } }
+
 // ---------------------------------------------------------------- dev shortcuts
 // ?solo=agent|handler&zone=lasers   jump straight into a local session
 if (params.get('solo')) {
@@ -384,4 +396,10 @@ if (params.get('solo')) {
   connect({ t: 'join', code: params.get('room'), name: params.get('name') || 'DEV', role: params.get('role') });
 } else if (params.get('host')) {
   connect({ t: 'create', name: params.get('name') || 'DEV', role: params.get('host'), difficulty: settings.difficulty });
-} else titleScreen();
+} else {
+  // a refresh mid-mission rejoins the same seat
+  let saved = null;
+  try { saved = JSON.parse(sessionStorage.getItem('ghostline.session') || 'null'); } catch { /* */ }
+  if (saved?.code) connect({ t: 'join', code: saved.code, role: saved.role, name: settings.name || 'ANON' }).then(() => {});
+  else titleScreen();
+}

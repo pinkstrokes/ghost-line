@@ -13,7 +13,9 @@ export class AgentView {
     this.cam = new THREE.PerspectiveCamera(72, 1, 0.05, 220);
     this.cam.layers.set(LAYER.WORLD); this.cam.layers.enable(LAYER.FP); this.cam.layers.enable(LAYER.SMOKE);
     world.scene.add(this.cam);
-    const sp = world.state?.practice ? practiceSpawn(world.state.practice, world.mission) : AGENT_SPAWN;
+    const rp = window.__gl?.resumePose;
+    const sp = rp ? { x: rp.x, z: rp.z, yaw: rp.yaw } : world.state?.practice ? practiceSpawn(world.state.practice, world.mission) : AGENT_SPAWN;
+    if (window.__gl) window.__gl.resumePose = null;
     this.pos = new THREE.Vector3(sp.x, 0, sp.z);
     this.vel = new THREE.Vector3();
     this.yaw = sp.yaw; this.pitch = 0;
@@ -40,7 +42,7 @@ export class AgentView {
       net.on('ev', (m) => this.onEvent(m.e)),
     ];
     this.lastObjective = null;
-    hud.keys('<kbd>WASD</kbd> 移动 <kbd>Shift</kbd> 跑 <kbd>C</kbd> 蹲 <kbd>空格</kbd> 跳<br><kbd>E</kbd> 查看/交互 <kbd>F</kbd> 手电 <kbd>Tab</kbd> 看表<br><kbd>V</kbd> 按住说话');
+    hud.keys('<kbd>WASD</kbd> 移动 <kbd>Shift</kbd> 跑 <kbd>C</kbd> 蹲 <kbd>空格</kbd> 跳<br><kbd>E</kbd> 查看/交互 <kbd>F</kbd> 手电 <kbd>Tab</kbd> 看表<br>按住 <kbd>V</kbd> 说话');
     this.keysT = 45;
   }
 
@@ -136,6 +138,7 @@ export class AgentView {
     this.tween.toQ.setFromRotationMatrix(m);
     this.input.unlock();
     this.hud.prompt('');
+    this.hud.paused(false);
     this.hud.setInspect(insp.hint || '', true);
     this.engine.setTargetHeight(this.settings.pixel * (insp.res || 1.7));
     insp.onEnter && insp.onEnter();
@@ -155,7 +158,7 @@ export class AgentView {
     const I = this.input, s = this.world.state, now = this.net.serverNow();
     const playing = s?.phase === 'playing';
     if (this.keysT > 0 && (this.keysT -= dt) <= 0) this.hud.keys('');
-    if (I.hit('F1')) { this.keysT = 20; this.hud.keys('<kbd>WASD</kbd> 移动 <kbd>Shift</kbd> 跑 <kbd>C</kbd> 蹲 <kbd>空格</kbd> 跳<br><kbd>E</kbd> 查看/交互 <kbd>Q</kbd> 反向 <kbd>F</kbd> 手电 <kbd>Tab</kbd> 看表<br><kbd>V</kbd> 按住说话'); }
+    if (I.hit('F1')) { this.keysT = 20; this.hud.keys('<kbd>WASD</kbd> 移动 <kbd>Shift</kbd> 跑 <kbd>C</kbd> 蹲 <kbd>空格</kbd> 跳<br><kbd>E</kbd> 查看/交互 <kbd>Q</kbd> 反向 <kbd>F</kbd> 手电 <kbd>Tab</kbd> 看表<br>按住 <kbd>V</kbd> 说话'); }
     if (this.lastObjective !== s?.objective && playing) {
       this.lastObjective = s.objective;
       const o = OBJECTIVES[s.objective];

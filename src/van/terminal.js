@@ -68,6 +68,7 @@ export class Terminal {
   key(e) {
     const s = this.world.state;
     const k = e.key;
+    if (e.altKey || e.metaKey || e.ctrlKey) return false; // Alt = push-to-talk, leave shortcuts alone
     if (/^F[1-6]$/.test(e.code)) { this.prog = PROGRAMS[+e.code.slice(1) - 1].id; this.sfx.keyClack(); this.dirty = true; return true; }
     if (k === '[' || k === ']') {
       const i = PROGRAMS.findIndex((p) => p.id === this.prog);

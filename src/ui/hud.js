@@ -45,7 +45,7 @@ export class Hud {
   radio(state) {
     const el = this.$('radio');
     el.className = state;
-    el.querySelector('.lbl').textContent = state === 'tx' ? 'TX  ·  TALKING' : state === 'rx' ? 'RX  ·  INCOMING' : state === 'off' ? 'RADIO OFF' : 'RADIO  [V]';
+    el.querySelector('.lbl').textContent = state === 'tx' ? 'TX  ·  TALKING' : state === 'rx' ? 'RX  ·  INCOMING' : state === 'off' ? 'RADIO OFF' : 'RADIO  [V / OPTION]';
   }
   keys(text) { const el = this.$('keys'); el.innerHTML = text; el.classList.toggle('on', !!text); }
   paused(v) { this.$('clickToPlay').style.display = v ? 'block' : 'none'; }

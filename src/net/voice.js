@@ -225,7 +225,8 @@ export class Voice {
     this.wdT = (this.wdT || 0) + dt;
     if (this.wdT > 1) { this.wdT = 0; this.watchdog(); }
     if (this.mode === 'hold' && this.track) {
-      const want = input.down('KeyV') && !(input.textCapture && input.textCapture.active);
+      // V, or Option/Alt (which still works while LINE is typing in the terminal)
+      const want = (input.down('KeyV') && !(input.textCapture && input.textCapture.active)) || input.down('AltLeft') || input.down('AltRight');
       this.setTx(want);
     }
     const lv = this.track && this.track.enabled ? this.rms(this.micAn) : 0;

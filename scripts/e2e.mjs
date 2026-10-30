@@ -122,6 +122,15 @@ try {
   await sleep(1500);
   await shot(Bp, '03-line-terminal');
 
+  step('GHOST refreshes the page mid-mission and rejoins the same seat');
+  await tp(A, 2.5, -31.5, 0, 0);
+  await sleep(600);
+  await A.goto(`${BASE}/`);
+  await waitFor(A, () => __gl.game && __gl.role === 'agent' && __gl.state.phase === 'playing', null, 'GHOST back in game');
+  await sleep(1500);
+  const back = await A.evaluate(() => { const p = __gl.game.view.pos; return [+p.x.toFixed(1), +p.z.toFixed(1)]; });
+  console.log(`  resumed at ${back} (was 2.5,-31.5); power still on: ${await A.evaluate(() => __gl.state.patch.power)}`);
+
   step('Z4 undercroft: dampers (budget 2) + walk through');
   const ids = m.maze.map((d) => d.id);
   await act(Bp, { k: 'damper', id: ids[0], open: true });

@@ -48,7 +48,7 @@ export class HandlerView {
     ];
     sfx.ambience('van', true);
     this.lastObjective = null;
-    this.keyHelp = '<kbd>M</kbd> 监视器 <kbd>T</kbd> 终端 <kbd>Tab</kbd> 蓝图<br>点击设备凑近 · <kbd>右键</kbd>/<kbd>Esc</kbd> 坐回去<br><kbd>V</kbd> 按住说话 · <kbd>F1</kbd> 再看一次';
+    this.keyHelp = '<kbd>M</kbd> 监视器 <kbd>T</kbd> 终端 <kbd>Tab</kbd> 蓝图<br>点击设备凑近 · <kbd>右键</kbd>/<kbd>Esc</kbd> 坐回去<br>按住 <kbd>V</kbd> / <kbd>Option</kbd> 说话 · <kbd>F1</kbd> 再看一次';
     hud.keys(this.keyHelp);
     this.keysT = 60;
   }
@@ -436,6 +436,7 @@ export class HandlerView {
   }
 
   setFocus(id) {
+    this.hud.paused(false);
     if (id === 'blueprint') { this.focus = 'blueprint'; this.input.unlock(); this.blueprint.open(); this.hud.crosshair(false); this.wantsCursor = true; return; }
     if (id === 'radio') { this.hud.toast(this.settings.ptt === 'open' ? '常开麦中' : '按住 V 说话', ''); return; }
     const p = this.focusPose(id);
