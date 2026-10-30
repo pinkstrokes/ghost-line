@@ -539,7 +539,7 @@ export class HandlerView {
     } else F.intensity = 0;
 
     // look / focus / tweens
-    if (!this.focus && I.locked) {
+    if (!this.focus && I.lookActive) {
       const sens = 0.0022 * this.settings.sens;
       this.yaw = Math.max(-1.75, Math.min(1.75, this.yaw - I.mouse.dx * sens));
       this.pitch = Math.max(-1.0, Math.min(0.7, this.pitch - I.mouse.dy * sens * (this.settings.invert ? -1 : 1)));
@@ -614,7 +614,8 @@ export class HandlerView {
     const hit = rc.intersectObjects(this.hitboxes, false)[0];
     const st = hit?.object.userData.station;
     this.hud.prompt(st ? `[CLICK] ${st.label}` : '');
-    if (st && this.input.mouse.clicked && this.input.locked) this.setFocus(st.id);
+    const I = this.input;
+    if (st && (I.locked ? I.mouse.clicked : I.mouse.tapped)) this.setFocus(st.id);
   }
 
   updateMonitors(dt) {

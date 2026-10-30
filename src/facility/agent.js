@@ -170,7 +170,7 @@ export class AgentView {
       if (o) this.hud.objective(o.agent);
     }
     // ---- look
-    if (!this.inspect && I.locked) {
+    if (!this.inspect && I.lookActive) {
       const sens = 0.0022 * this.settings.sens;
       this.yaw -= I.mouse.dx * sens;
       this.pitch -= I.mouse.dy * sens * (this.settings.invert ? -1 : 1);
