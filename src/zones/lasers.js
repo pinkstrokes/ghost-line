@@ -136,7 +136,8 @@ export function buildLasers(world) {
     update(dt, t, s) {
       const st = world.serverTime() / 1000;
       led.visible = (st * 2) % 1 < 0.5;
-      const armed = s && s.phase === 'playing' && s.doors.A && !s.lasers.cleared;
+      // the grid is live (and visible on IR) until GHOST is through, so LINE can study it early
+      const armed = s && s.phase === 'playing' && !s.lasers.cleared;
       const beams = armed || !s || s.phase !== 'playing' ? activeBeams(L, st) : [];
       setBeams(beams);
       // GHOST side trip detection

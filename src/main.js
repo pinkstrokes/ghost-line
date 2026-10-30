@@ -94,7 +94,7 @@ function howToScreen(back) {
     <p>一个人当 <b style="color:var(--ghost)">GHOST</b>：第一人称潜入废弃设施 KESTREL-9。另一个人当 <b style="color:var(--handler)">LINE</b>：坐在两公里外的监控面包车里，有设施的原始蓝图、偷接的监控摄像头和一台接进楼控系统的终端。</p>
     <p>GHOST 看得到机关的细节但不知道怎么解；LINE 知道怎么解、看得到 GHOST 看不到的东西（红外激光、光束、热成像、传感器），但动不了。<b>每一关都必须说话才能过。</b></p>
     <h4>说话</h4>
-    <p>按住 <kbd>V</kbd> 用对讲机说话（设置里可以改成常开麦）。坐在同一个房间也行，开 Discord 也行。</p>
+    <p>按住 <kbd>V</kbd>（或 <kbd>Option</kbd>/<kbd>Alt</kbd>，LINE 在终端打字时用这个）用对讲机说话，设置里可以改成常开麦。坐在同一个房间也行，开 Discord 也行。</p>
     <h4>GHOST</h4>
     <p><kbd>WASD</kbd> 移动 <kbd>鼠标</kbd> 看 <kbd>Shift</kbd> 跑（有声音） <kbd>C</kbd> 蹲（没声音） <kbd>空格</kbd> 跳 <kbd>F</kbd> 手电 <kbd>E</kbd> 查看/交互 <kbd>Tab</kbd> 抬手看表（时间、警报、目标）</p>
     <h4>LINE</h4>

@@ -114,6 +114,10 @@ export class Avatar {
     this.cone = new THREE.Mesh(coneGeo, new THREE.MeshBasicMaterial({ color: 0xfff1c8, transparent: true, opacity: 0.06, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: true }));
     this.cone.position.set(0, -0.45, 0.26);
     this.arms[1].add(this.cone);
+    // the torch's IR illuminator: a faint cone on the IR layer so LINE can see GHOST's heading in IR mode
+    this.coneIR = new THREE.Mesh(coneGeo, new THREE.MeshBasicMaterial({ color: 0x9a9a9a, transparent: true, opacity: 0.16, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false }));
+    this.coneIR.position.copy(this.cone.position);
+    this.arms[1].add(this.coneIR);
     // legs/boots
     this.legs = [-1, 1].map((s) => {
       const pivot = new THREE.Group();
@@ -176,6 +180,7 @@ export class Avatar {
     this.arms[0].rotation.z = -0.15; this.arms[1].rotation.z = 0.12;
     this.body.rotation.x = this.crouchT * 0.25 + (flags & 4 ? 0.12 : 0);
     this.cone.visible = !!(flags & 2);
+    this.coneIR.visible = !!(flags & 2);
     // face
     this.blinkAt -= dt;
     let face = 'neutral';

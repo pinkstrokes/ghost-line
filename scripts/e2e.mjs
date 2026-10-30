@@ -210,6 +210,23 @@ try {
   console.log('  final', fin, await A.evaluate(() => __gl.state.result));
   await shot(A, '08-ghost-end');
   await shot(Bp, '08-line-end');
+  step('play again: back to the lobby, second mission');
+  const seed1 = await A.evaluate(() => __gl.state.seed);
+  await A.evaluate(() => __gl.net.send({ t: 'lobby' }));
+  await waitFor(Bp, () => __gl.state.phase === 'lobby' && !__gl.game, null, 'LINE back in lobby');
+  await A.evaluate(() => __gl.net.send({ t: 'ready', v: true }));
+  await Bp.evaluate(() => __gl.net.send({ t: 'ready', v: true }));
+  await sleep(300);
+  await A.evaluate(() => __gl.net.send({ t: 'start' }));
+  await waitFor(Bp, () => __gl.game && __gl.state.phase === 'playing', null, 'second mission');
+  await sleep(2500);
+  await Bp.evaluate(() => { window.__pc = 0; __gl.net.on('pose', () => window.__pc++); });
+  await sleep(2000);
+  const rate = (await Bp.evaluate(() => window.__pc)) / 2;
+  const seed2 = await A.evaluate(() => __gl.state.seed);
+  console.log(`  seeds ${seed1} -> ${seed2}; GHOST pose rate ${rate}/s (one loop ≈ 15-20)`);
+  if (seed1 === seed2) throw new Error('second mission reused the seed');
+  if (rate > 30) throw new Error('more than one game loop running');
   console.log(`\n✔ E2E PASSED (${fin.strikes} strikes)`);
 } catch (e) {
   console.log(`\n✘ E2E FAILED: ${e.message}`);

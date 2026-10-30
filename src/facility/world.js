@@ -73,6 +73,7 @@ export class FacilityWorld {
     this.scene.add(this.avatar.group);
     this.avatar.setLayer(LAYER.AVATAR);
     this.avatar.cone.layers.set(LAYER.CONE);
+    this.avatar.coneIR.layers.set(LAYER.IR);
   }
 
   buildSky() {

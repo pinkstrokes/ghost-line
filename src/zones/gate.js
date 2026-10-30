@@ -59,6 +59,7 @@ export function buildGate(world) {
   kp.position.set(1.4, 1.3, 0.0);
   world.scene.add(kp);
   B.box(1.4, 1.3, 0.05, 0.42, 0.62, 0.1, 0x8e8c80, { bevel: 0.02, grad: 0.1 });
+  B.box(1.4, 1.3, 0.02, 0.48, 0.68, 0.04, PAL.yellow, { grad: 0 });
   B.box(1.4, 0.75, 0.03, 0.05, 0.5, 0.05, PAL.metalDark); // conduit
   const front = 0.101;
   // plate with glyphs

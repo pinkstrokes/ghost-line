@@ -57,7 +57,7 @@ function genLasers(r, diff) {
       g.beams = [...wall(z, lane), { kind: 'h', y: 1.18, z }, { kind: 'h', y: 1.62, z }, { kind: 'h', y: 2.2, z }];
       g.gap = lane;
     }
-    if (type === 'low') g.beams = [{ kind: 'h', y: 0.26, z }, { kind: 'h', y: 2.45, z }];
+    if (type === 'low') g.beams = [{ kind: 'h', y: 0.26, z }, { kind: 'h', y: 2.75, z }]; // jump apex puts the head at ~2.47 m
     if (type === 'blink') {
       g.beams = wall(z, -1);
       g.blink = { on: 2.6 * B, off: 1.7 * B, phase: r.float(0, 4) };

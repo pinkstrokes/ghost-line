@@ -62,6 +62,7 @@ export function buildPatch(world) {
   // ---- the patch frame cabinet
   B.box(6.6, 1.15, ZC, 0.8, 2.3, 2.5, 0x6e7468, { bevel: 0.03, collide: true });
   B.box(6.6, 2.32, ZC, 0.86, 0.06, 2.56, 0x4e534a);
+  B.box(FX - 0.01, 2.27, ZC, 0.03, 0.05, 2.5, PAL.yellow, { grad: 0 }).box(FX - 0.01, 0.06, ZC, 0.03, 0.05, 2.5, PAL.yellow, { grad: 0 });
   // breaker lever housing
   B.box(FX - 0.06, 1.95, ZC + 1.05, 0.1, 0.32, 0.18, 0x3a3d38);
   // face artwork (static): grid, labels, ID plate
