@@ -330,7 +330,7 @@ export class AgentView {
     this.engine.render(this.world.scene, this.cam, t);
   }
 
-  dispose() { this.unsub.forEach((u) => u()); }
+  dispose() { this.unsub.forEach((u) => u()); this.watchTex.dispose(); }
 }
 
 export { ZONES };

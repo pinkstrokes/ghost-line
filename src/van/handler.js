@@ -736,6 +736,14 @@ export class HandlerView {
   dispose() {
     this.unsub.forEach((u) => u());
     this.blueprint.close();
+    for (const m of this.monitors) { m.rt.dispose(); m.otex.dispose(); }
+    const seen = new Set();
+    this.scene.traverse((o) => {
+      if (o.geometry && !seen.has(o.geometry)) { seen.add(o.geometry); o.geometry.dispose(); }
+      const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
+      for (const mm of mats) { if (seen.has(mm)) continue; seen.add(mm); mm.map?.dispose(); mm.dispose(); }
+    });
+    this.terminal.tex.dispose();
     this.input.textCapture = null;
     sfx.ambience('van', false);
   }

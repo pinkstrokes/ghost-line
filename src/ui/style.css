@@ -38,9 +38,9 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); 
 /* ---------------- overlay screens */
 #overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10; }
 #overlay:empty { display: none; }
-.screen { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 40%, rgba(30,32,30,0.55), rgba(5,6,6,0.94) 70%); }
+.screen { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0.25), rgba(3,4,5,0.88) 78%); }
 .screen::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 3px); }
-.card { position: relative; z-index: 1; width: min(760px, 92vw); max-height: 90vh; overflow: auto; padding: 34px 38px; background: var(--panel); border: 1px solid var(--line); box-shadow: 0 30px 80px rgba(0,0,0,0.6); }
+.card { position: relative; z-index: 1; width: min(760px, 92vw); max-height: 90vh; overflow: auto; padding: 34px 38px; background: rgba(14,15,16,0.86); backdrop-filter: blur(3px); border: 1px solid var(--line); box-shadow: 0 30px 80px rgba(0,0,0,0.6); }
 .title { font-family: var(--stencil); font-size: clamp(46px, 8vw, 92px); letter-spacing: 10px; line-height: 0.9; margin: 0; color: var(--ink); text-shadow: 4px 4px 0 #000; }
 .title span { color: var(--ghost); }
 .subtitle { margin: 14px 0 26px; color: var(--dim); letter-spacing: 3px; font-size: 13px; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
@@ -112,3 +112,6 @@ label { font-size: 12px; color: var(--dim); letter-spacing: 2px; }
 .split b { display: block; font-size: 15px; color: var(--ink); margin-top: 4px; }
 .split.here b { color: var(--bad); }
 .split.none b { color: #444; }
+
+.screen.side { justify-content: flex-start; padding-left: max(24px, 6vw); background: linear-gradient(90deg, rgba(3,4,5,0.9) 0%, rgba(3,4,5,0.55) 45%, rgba(3,4,5,0.0) 75%); }
+.screen.side .card { width: min(520px, 92vw); }

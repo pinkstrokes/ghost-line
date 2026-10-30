@@ -7,6 +7,7 @@ import { sfx } from './audio/sfx.js';
 import { generateMission } from '../shared/mission.js';
 import { DIFFICULTY } from '../shared/layout.js';
 import { fmtTime, ZONE_TITLES } from './ui/text.js';
+import { TitleScene } from './ui/title-scene.js';
 
 const $overlay = document.getElementById('overlay');
 const canvas = document.getElementById('view');
@@ -27,6 +28,9 @@ const hud = new Hud(document.getElementById('hud'));
 const app = { net: null, role: null, code: null, state: null, game: null, voice: null, mission: null, missionKey: null };
 window.__gl = app;
 
+let titleScene = null;
+const backdrop = () => { if (app.game) return; if (!titleScene) titleScene = new TitleScene(engine); titleScene.start(); };
+
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const html = (s) => { $overlay.innerHTML = s; };
 const on = (sel, ev, fn) => { const el = $overlay.querySelector(sel); if (el) el.addEventListener(ev, fn); return el; };
@@ -34,7 +38,8 @@ const on = (sel, ev, fn) => { const el = $overlay.querySelector(sel); if (el) el
 // ---------------------------------------------------------------- title
 function titleScreen(err = '') {
   teardownGame();
-  html(`<div class="screen"><div class="card">
+  backdrop();
+  html(`<div class="screen side"><div class="card">
     <h1 class="title">GHOST<br><span>LINE</span></h1>
     <p class="subtitle">两人语音合作潜入 · 一个人进去，一个人在车里看着</p>
     <div class="col">
@@ -44,7 +49,7 @@ function titleScreen(err = '') {
       <div class="row"><input id="code" maxlength="4" placeholder="CODE" style="width:140px;text-transform:uppercase" />
       <button id="join" style="flex:1">加入行动 JOIN</button></div>
       <button class="big" id="solo">单人熟悉 SOLO <small>一个人进去看看（另一个角色空着）</small></button>
-      <div class="row"><button id="howto" style="flex:1">玩法 HOW TO PLAY</button><button id="settings" style="flex:1">设置 SETTINGS</button><button id="print" style="flex:1">打印蓝图</button></div>
+      <div class="row"><button id="howto" style="flex:1">玩法</button><button id="settings" style="flex:1">设置</button><button id="print" style="flex:1">打印蓝图</button></div>
       <div class="err">${esc(err)}</div>
     </div></div></div>`);
   const name = () => { settings.name = $overlay.querySelector('#name').value.trim().toUpperCase().slice(0, 16) || 'ANON'; saveSettings(); return settings.name; };
@@ -197,6 +202,7 @@ function render() {
 
 // ---------------------------------------------------------------- lobby
 function lobbyScreen() {
+  backdrop();
   const s = app.state, me = app.role;
   const seat = (role, title, sub, cls) => {
     const p = s.players[role];
@@ -266,6 +272,8 @@ async function startGame(key) {
   const token = (app.startToken = (app.startToken || 0) + 1);
   app.missionKey = key;
   teardownGame();
+  titleScene?.stop();
+  engine.setTargetHeight(settings.pixel);
   html(`<div class="screen"><div class="card"><p class="subtitle">BUILDING ${esc(app.state.seed)}…</p></div></div>`);
   await new Promise((r) => setTimeout(r, 30));
   if (token !== app.startToken) return;
@@ -342,6 +350,7 @@ function rank(s, r) {
 function endScreen() {
   const s = app.state, r = s.result || {};
   teardownGame();
+  backdrop();
   const rk = rank(s, r);
   let prev = 0;
   const rows = Object.entries(ZONE_TITLES).map(([k, v]) => {

@@ -108,6 +108,22 @@ export class FacilityWorld {
     this.moon = moon;
   }
 
+  dispose() {
+    const seen = new Set();
+    this.scene.traverse((o) => {
+      if (o.geometry && !seen.has(o.geometry)) { seen.add(o.geometry); o.geometry.dispose(); }
+      const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
+      for (const m of mats) {
+        if (seen.has(m) || m === IR_BEAM_MAT) continue;
+        seen.add(m);
+        for (const k of ['map', 'emissiveMap']) if (m[k] && !seen.has(m[k])) { seen.add(m[k]); m[k].dispose(); }
+        m.dispose();
+      }
+    });
+    this.flash.shadow.map?.dispose();
+    this.scene.clear();
+  }
+
   // ---------------------------------------------------------------- collision
   addCollider(x0, x1, z0, z1, y0 = 0, y1 = 3, id = null) {
     const c = { x0, x1, z0, z1, y0, y1, id, disabled: false };
