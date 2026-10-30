@@ -56,7 +56,7 @@ export const BULKHEADS = {
 
 export const CAMERAS = [
   // id, position, look-at target, ir capability, ptz, zone
-  { id: 'CAM-01', label: 'YARD / SERVICE ENTRY', pos: [-6.5, 4.2, 1.2], look: [1.5, 0.6, 10], ir: false, ptz: true, zone: 'gate' },
+  { id: 'CAM-01', label: 'YARD / SERVICE ENTRY', pos: [-6.5, 4.2, 1.2], look: [2.5, 0.4, 7.5], ir: false, ptz: true, zone: 'gate' },
   { id: 'CAM-02', label: 'HALL 2 / NORTH END', pos: [0, 3.0, -26.6], look: [0, 0.6, -6], ir: true, ptz: false, zone: 'lasers' },
   { id: 'CAM-03', label: 'HALL 2 / SOUTH CORNER', pos: [1.85, 3.05, -0.5], look: [-0.4, 0.4, -16], ir: true, ptz: true, zone: 'lasers' },
   { id: 'CAM-04', label: 'SUBSTATION', pos: [-6.6, 3.9, -27.4], look: [4, 0.8, -35], ir: false, ptz: true, zone: 'patch' },

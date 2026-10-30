@@ -3,6 +3,7 @@ import { Builder, PAL, stencilText } from '../engine/kit.js';
 import { room, fixture, emergencyLamp, drawSign, drawStencil, cameraProp, pipeRun, cableTray, debris, papers } from '../facility/props.js';
 import { HALL, HALL_CHECKPOINT, CAMERAS } from '../../shared/layout.js';
 import { activeBeams, beamHit } from '../../shared/mission.js';
+import { IR_BEAM_MAT } from '../facility/world.js';
 
 // Laser hall. Beams live on the IR layer only: GHOST never sees them, LINE sees them on the IR cameras.
 
@@ -97,12 +98,12 @@ export function buildLasers(world) {
   const pos = new Float32Array(MAXB * 6);
   const lg = new THREE.BufferGeometry();
   lg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const lines = new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: 0xffffff, fog: false }));
+  const lines = new THREE.LineSegments(lg, IR_BEAM_MAT);
   lines.frustumCulled = false;
   lines.layers.set(2);
   world.scene.add(lines);
   const cylGeo = new THREE.CylinderGeometry(0.025, 0.025, 1, 6, 1, true);
-  const cylMat = new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false });
+  const cylMat = IR_BEAM_MAT;
   const cyls = Array.from({ length: MAXB }, () => {
     const c = new THREE.Mesh(cylGeo, cylMat);
     c.layers.set(2);

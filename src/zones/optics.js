@@ -3,6 +3,7 @@ import { Builder, PAL, stencilText } from '../engine/kit.js';
 import { room, fixture, emergencyLamp, drawSign, makeDoor, cameraProp, desk, crt, papers, chair, shelf } from '../facility/props.js';
 import { OPTICS, latticePos, ZONES, MAZE, CAMERAS } from '../../shared/layout.js';
 import { traceBeams } from '../../shared/optics-sim.js';
+import { IR_BEAM_MAT } from '../facility/world.js';
 
 // Optics lab: six pedestals on a 1 m lattice. The beam is infra-red (IR layer only).
 // Every wall port looks the same to GHOST; LINE sees which ones are live on CAM-06 IR.
@@ -77,6 +78,11 @@ export function buildOptics(world) {
     const post = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2, 6), pedMat);
     post.position.y = 0.05;
     head.add(mirror, frame, post);
+    // IR: mirrors read as bright bars from the ceiling camera so LINE can see which way they face
+    const irBar = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.06, 0.08), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    irBar.position.y = BEAM_Y - 0.98 + 0.24;
+    irBar.layers.set(6);
+    head.add(irBar);
     // engraved plaque with the letter (small: readable by GHOST, not by the ceiling camera)
     const cv = Object.assign(document.createElement('canvas'), { width: 128, height: 64 });
     const c = cv.getContext('2d');
@@ -129,7 +135,7 @@ export function buildOptics(world) {
   const pos = new Float32Array(MAX * 6);
   const lg = new THREE.BufferGeometry();
   lg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const lines = new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: 0xffffff, fog: false }));
+  const lines = new THREE.LineSegments(lg, IR_BEAM_MAT);
   lines.layers.set(2); lines.frustumCulled = false;
   world.scene.add(lines);
   // thicker quads so the beam reads on the ceiling camera

@@ -203,6 +203,7 @@ function lobbyScreen() {
     <div class="row" style="justify-content:space-between"><div><label>行动代码 OPERATION CODE</label><div class="code">${esc(app.code)}</div></div>
     <div class="col" style="align-items:flex-end"><span class="tag">${DIFFICULTY[s.difficulty]?.label}</span><span class="small">${DIFFICULTY[s.difficulty]?.time / 60} MIN · ${s.maxStrikes} ALERTS</span></div></div>
     <p class="hint">${lan}</p>
+    <p class="hint">任务种子 SEED <b style="color:var(--ink);letter-spacing:3px">${esc(s.seed)}</b> · LINE 想要纸质蓝图可以 <a href="/blueprint.html?seed=${encodeURIComponent(s.seed)}&diff=${s.difficulty}" target="_blank" style="color:var(--accent)">打印这一局的蓝图</a>（改难度会换种子内容）</p>
     <div class="seats">
       ${seat('agent', 'GHOST', '潜入者。第一人称进设施，看得到机关细节，但不知道怎么解。', 'ghost')}
       ${seat('handler', 'LINE', '接线员。坐在面包车里：蓝图、监控、终端。知道怎么解，但动不了。', 'line')}
@@ -243,7 +244,7 @@ function lobbyScreen() {
 
 function ensureVoice() {
   if (!app.voice) {
-    app.voice = new Voice({ net: app.net, role: app.role, sfx, hud, mode: settings.ptt });
+    app.voice = new Voice({ net: app.net, role: app.role, sfx, hud, mode: settings.ptt, getState: () => app.state });
     if (app.net instanceof LocalNet) app.voice.local = true;
   }
   app.voice.role = app.role;
@@ -277,6 +278,14 @@ async function startGame(key) {
   app.game = { world, view };
   app.voice.attach(view);
   html('');
+  const intro = document.createElement('div');
+  intro.className = 'intro';
+  intro.innerHTML = app.role === 'agent'
+    ? `<div><small>KESTREL-9 · SECTOR B · 02:00</small><h2>GHOST</h2><p>LINE 在车里看着你。说话按住 V。</p></div>`
+    : `<div><small>SURVEILLANCE VAN · 2 KM OUT · 02:00</small><h2>LINE</h2><p>GHOST 已经到了围栏里面。说话按住 V。</p></div>`;
+  document.body.appendChild(intro);
+  setTimeout(() => intro.classList.add('out'), 2600);
+  setTimeout(() => intro.remove(), 4200);
   hud.show(true);
   hud.crosshair(true);
   hud.radio(settings.ptt === 'off' ? 'off' : '');
@@ -313,12 +322,29 @@ function teardownGame() {
   for (const k of Object.keys(sfx.ambs)) sfx.ambience(k, false);
 }
 
+function rank(s, r) {
+  if (!r.win) return null;
+  const left = 1 - r.elapsed / s.limit;
+  const pts = (s.maxStrikes - r.strikes) / s.maxStrikes * 2 + left * 2;
+  return pts > 3.3 ? 'S' : pts > 2.6 ? 'A' : pts > 1.8 ? 'B' : 'C';
+}
+
 function endScreen() {
   const s = app.state, r = s.result || {};
   teardownGame();
+  const rk = rank(s, r);
+  let prev = 0;
+  const rows = Object.entries(ZONE_TITLES).map(([k, v]) => {
+    const t = s.splits?.[k];
+    if (t == null) return `<div class="split ${k === r.reached ? 'here' : 'none'}"><span>${v}</span><b>${k === r.reached && !r.win ? '✕' : '—'}</b></div>`;
+    const d = t - prev; prev = t;
+    return `<div class="split"><span>${v}</span><b>${fmtTime(d)}</b></div>`;
+  }).join('');
   html(`<div class="screen"><div class="card">
     <h2 class="result ${r.win ? 'win' : 'lose'}">${r.win ? 'EXTRACTED' : 'COMPROMISED'}</h2>
     <p class="subtitle">${esc(r.reason || '')}</p>
+    ${rk ? `<div class="rank">${rk}</div>` : ''}
+    <div class="splits">${rows}</div>
     <div class="stats">
       <div><span class="small">TIME</span><b>${fmtTime(r.elapsed || 0)}</b></div>
       <div><span class="small">ALERTS</span><b>${r.strikes ?? 0} / ${s.maxStrikes}</b></div>

@@ -54,6 +54,7 @@ export class Room {
       practice: null,
       players: keepPlayers || { agent: null, handler: null },
       objective: 'gate',
+      splits: {},
       result: null,
       ...freshZones(this.mission),
     };
@@ -118,7 +119,8 @@ export class Room {
     const s = this.state;
     if (s.phase !== 'playing') return;
     s.phase = win ? 'won' : 'lost';
-    s.result = { win, reason, elapsed: this.now() - s.startAt, strikes: s.strikes, practice: s.practice };
+    if (win) s.splits.escape = this.now() - s.startAt;
+    s.result = { win, reason, elapsed: this.now() - s.startAt, strikes: s.strikes, practice: s.practice, reached: s.objective };
     this.broadcast();
     this.event({ k: win ? 'win' : 'lose', reason });
   }
@@ -190,7 +192,9 @@ export class Room {
       gate: s.doors.A, lasers: s.lasers.cleared, patch: s.patch.power, maze: s.maze.cleared,
       optics: s.optics.done, vault: s.vault.taken, escape: 0,
     };
-    s.objective = ZONE_ORDER.find((z) => !done[z]) || 'escape';
+    const next = ZONE_ORDER.find((z) => !done[z]) || 'escape';
+    if (next !== s.objective && s.startAt) s.splits[s.objective] = this.now() - s.startAt;
+    s.objective = next;
     this.broadcast();
   }
 

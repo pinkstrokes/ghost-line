@@ -30,10 +30,14 @@ function genGate(r) {
 // Beam: {kind:'v', x, z} vertical floor-to-ceiling; {kind:'h', y, z} horizontal across the hall;
 // {kind:'s', z, amp, period, phase} sweeping vertical. A gate may blink: {on, off, phase}.
 function wall(z, gapLane) {
+  // beams 0.4 m apart: closer than a body width (2 x 0.24 m), so there is no slipping between them.
+  // The gap lane drops the beams strictly inside that lane.
   const beams = [];
-  for (let m = 0; m < 8; m++) {
-    if (Math.floor(m / 2) === gapLane) continue;
-    beams.push({ kind: 'v', x: -1.75 + 0.5 * m, z });
+  const lo = -2 + gapLane, hi = -1 + gapLane;
+  for (let m = 0; m < 10; m++) {
+    const x = -1.8 + 0.4 * m;
+    if (gapLane >= 0 && x > lo + 1e-6 && x < hi - 1e-6) continue;
+    beams.push({ kind: 'v', x, z });
   }
   return beams;
 }

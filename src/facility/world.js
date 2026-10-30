@@ -14,6 +14,12 @@ import { buildEscape } from '../zones/escape.js';
 
 export const LAYER = { WORLD: 0, AVATAR: 1, IR: 2, FP: 3, SMOKE: 4, HIT: 5, HOT: 6, CONE: 7, COLDMARK: 8 };
 
+// IR beams fade with distance from the viewing camera, so near gates pop and far ones recede
+export const IR_BEAM_MAT = new THREE.ShaderMaterial({
+  vertexShader: 'varying float vD; void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); vD = -mv.z; gl_Position = projectionMatrix * mv; }',
+  fragmentShader: 'varying float vD; void main(){ float b = clamp(1.35 - vD / 16.0, 0.28, 1.0); gl_FragColor = vec4(vec3(b), 1.0); }',
+});
+
 const ROOM_LIGHTS = {
   gate: ['gate'], lasers: ['lasers'], patch: ['patch'], maze: ['maze'], optics: ['optics'], vault: ['vault'], escape: ['escape'],
 };

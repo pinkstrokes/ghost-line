@@ -11,6 +11,7 @@ export class Hud {
       <div id="inspect-hint"></div>
       <div id="radio"><span class="dot"></span><span class="lbl">RADIO</span></div>
       <div id="clickToPlay">点击屏幕继续 · CLICK TO RESUME</div>
+      <div id="keys"></div>
     `;
     this.$ = (id) => root.querySelector('#' + id);
     this.objTimer = 0;
@@ -46,5 +47,6 @@ export class Hud {
     el.className = state;
     el.querySelector('.lbl').textContent = state === 'tx' ? 'TX  ·  TALKING' : state === 'rx' ? 'RX  ·  INCOMING' : state === 'off' ? 'RADIO OFF' : 'RADIO  [V]';
   }
+  keys(text) { const el = this.$('keys'); el.innerHTML = text; el.classList.toggle('on', !!text); }
   paused(v) { this.$('clickToPlay').style.display = v ? 'block' : 'none'; }
 }

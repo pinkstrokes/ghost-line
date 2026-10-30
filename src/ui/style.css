@@ -95,3 +95,20 @@ label { font-size: 12px; color: var(--dim); letter-spacing: 2px; }
 .bp-tools button { padding: 8px 12px; font-size: 12px; background: rgba(12,26,44,0.9); border-color: #35577a; }
 .bp-tools button.on { background: #c8382c; border-color: #ff7b6b; color: #fff; }
 .bp-tools .small { color: #8fb0d0; }
+
+#keys { position: absolute; right: 22px; bottom: 18px; font-size: 12px; letter-spacing: 1px; color: var(--dim); text-align: right; line-height: 1.9; opacity: 0; transition: opacity 1s; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+#keys.on { opacity: 0.9; }
+#keys kbd { font-family: var(--mono); background: rgba(0,0,0,0.6); border: 1px solid #555; border-bottom-width: 2px; padding: 0 5px; font-size: 11px; color: var(--ink); margin: 0 2px; }
+
+.intro { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; background: #000; pointer-events: none; transition: opacity 1.4s; }
+.intro.out { opacity: 0; }
+.intro div { text-align: center; }
+.intro small { color: var(--dim); letter-spacing: 4px; font-size: 12px; }
+.intro h2 { font-family: var(--stencil); font-size: 84px; letter-spacing: 14px; margin: 10px 0; color: var(--ink); }
+.intro p { color: var(--dim); font-family: -apple-system, "PingFang SC", sans-serif; letter-spacing: 2px; }
+.rank { position: absolute; right: 38px; top: 22px; font-family: var(--stencil); font-size: 96px; color: var(--accent); text-shadow: 4px 4px 0 #000; }
+.splits { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 18px 0 0; }
+.split { border: 1px solid var(--line); padding: 8px 6px; font-size: 10px; letter-spacing: 1px; color: var(--dim); }
+.split b { display: block; font-size: 15px; color: var(--ink); margin-top: 4px; }
+.split.here b { color: var(--bad); }
+.split.none b { color: #444; }

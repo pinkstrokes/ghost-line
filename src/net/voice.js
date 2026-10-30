@@ -3,8 +3,9 @@
 // a band-pass + soft clip "radio" chain with a hiss bed and squelch clicks.
 
 export class Voice {
-  constructor({ net, role, sfx, hud, mode = 'hold' }) {
+  constructor({ net, role, sfx, hud, mode = 'hold', getState }) {
     this.net = net; this.role = role; this.sfx = sfx; this.hud = hud;
+    this.getState = getState;
     this.mode = mode;
     this.stream = null; this.track = null;
     this.pc = null; this.sender = null;
@@ -48,62 +49,129 @@ export class Voice {
     return true;
   }
 
+  // Test hook: a synthetic tone instead of the microphone (headless browsers can't open a mic).
+  async enableFake() {
+    const ctx = this.sfx.init();
+    const osc = ctx.createOscillator(); osc.frequency.value = 440;
+    const g = ctx.createGain(); g.gain.value = 0.4;
+    const dest = ctx.createMediaStreamDestination();
+    osc.connect(g).connect(dest); osc.start();
+    this.stream = dest.stream;
+    this.track = this.stream.getAudioTracks()[0];
+    this.track.enabled = this.mode === 'open';
+    this.micAn = ctx.createAnalyser(); this.micAn.fftSize = 512;
+    g.connect(this.micAn);
+    if (this.sender) await this.sender.replaceTrack(this.track);
+    this.ensurePeer();
+    return true;
+  }
+
+  // Signalling: GHOST always offers, LINE always answers. Every offer carries a session id;
+  // LINE rebuilds its peer only for a new id and asks for an offer (hello) at most every 4 s.
   onState(s) {
+    this.lastState = s;
+    if (this.local || this.mode === 'off') return;
     const other = this.role === 'agent' ? s.players.handler : s.players.agent;
     const present = other && other.connected;
-    if (!present && this.pc) this.closePeer();
-    if (present && !this.pc && !this.local && this.mode !== 'off') this.ensurePeer();
+    if (!present) { if (this.pc) this.closePeer(); return; }
+    if (this.role === 'agent' && !this.pc) this.offer();
+    if (this.role === 'handler' && !this.pc) this.hello();
   }
 
   ensurePeer() {
-    if (this.pc || this.local) return;
-    const pc = (this.pc = new RTCPeerConnection({ iceServers: [] }));
-    const tr = pc.addTransceiver('audio', { direction: 'sendrecv' });
-    this.sender = tr.sender;
-    if (this.track) this.sender.replaceTrack(this.track);
-    pc.onicecandidate = (e) => { if (e.candidate) this.net.send({ t: 'rtc', d: { type: 'ice', c: e.candidate } }); };
-    pc.ontrack = (e) => this.playRemote(e.streams[0] || new MediaStream([e.track]));
-    pc.onconnectionstatechange = () => {
-      this.connected = pc.connectionState === 'connected';
-      if (pc.connectionState === 'failed') { this.closePeer(); setTimeout(() => this.ensurePeer(), 1500); }
-    };
-    if (this.role === 'agent') this.makeOffer();
-    else this.net.send({ t: 'rtc', d: { type: 'hello' } });
+    if (this.local || this.mode === 'off') return;
+    if (this.role === 'agent') { if (!this.pc) this.offer(); }
+    else if (!this.pc) this.hello();
   }
 
-  async makeOffer() {
-    const pc = this.pc;
-    if (!pc) return;
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    this.net.send({ t: 'rtc', d: { type: 'offer', sdp: pc.localDescription } });
+  hello() {
+    const now = performance.now();
+    if (now - (this.lastHello || -1e9) < 2500) return;
+    (this.dbg ||= []).push(`${Math.round(now)} hello`);
+    this.lastHello = now;
+    this.net.send({ t: 'rtc', d: { type: 'hello' } });
+  }
+
+  // called once a second from update(): retry until the link is up
+  watchdog() {
+    const s = this.getState?.() || this.lastState;
+    if (!s || this.local || this.mode === 'off') return;
+    const other = this.role === 'agent' ? s.players.handler : s.players.agent;
+    if (!other?.connected || this.connected) return;
+    // Negotiation can legitimately take many seconds (first audio-device init on some machines),
+    // so only restart a handshake that has clearly stalled.
+    const age = performance.now() - (this.pcAt || 0);
+    const dead = this.pc && ['failed', 'closed'].includes(this.pc.connectionState);
+    if (this.role === 'agent') { if (!this.pc || dead || age > 30000) this.offer(); }
+    else if (!this.pc || dead || age > 32000) this.hello();
+  }
+
+  makePeer(sid) {
+    this.closePeer();
+    const pc = (this.pc = new RTCPeerConnection({ iceServers: [] }));
+    this.pcAt = performance.now();
+    this.sid = sid;
+    pc.onicecandidate = (e) => { if (e.candidate) this.net.send({ t: 'rtc', d: { type: 'ice', sid, c: e.candidate } }); };
+    pc.ontrack = (e) => this.playRemote(e.streams[0] || new MediaStream([e.track]));
+    pc.onconnectionstatechange = () => {
+      if (this.pc !== pc) return;
+      (this.dbg ||= []).push(`${Math.round(performance.now())} state ${pc.connectionState} ice=${pc.iceConnectionState}`);
+      this.connected = pc.connectionState === 'connected';
+      if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+        this.closePeer();
+        setTimeout(() => this.ensurePeer(), 2000);
+      }
+    };
+    return pc;
+  }
+
+  async offer() {
+    (this.dbg ||= []).push(`${Math.round(performance.now())} offer`);
+    const sid = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    const pc = this.makePeer(sid);
+    const tr = pc.addTransceiver('audio', { direction: 'sendrecv' });
+    this.sender = tr.sender;
+    if (this.track) await this.sender.replaceTrack(this.track);
+    const off = await pc.createOffer();
+    if (this.pc !== pc) return;
+    await pc.setLocalDescription(off);
+    this.net.send({ t: 'rtc', d: { type: 'offer', sid, sdp: pc.localDescription } });
   }
 
   closePeer() {
-    try { this.pc?.close(); } catch { /* */ }
+    const pc = this.pc;
     this.pc = null; this.sender = null; this.connected = false;
+    try { pc?.close(); } catch { /* */ }
   }
 
   async onSignal(d) {
     if (!d || this.local || this.mode === 'off') return;
-    if (d.type === 'hello') {
-      if (this.role === 'agent') { this.closePeer(); this.ensurePeer(); }
-      return;
-    }
+    (this.dbg ||= []).push(`${Math.round(performance.now())} in ${d.type} ${d.sid || ''} pc=${!!this.pc} sid=${this.sid || ''}`);
     if (d.type === 'ptt') { this.remoteTx = !!d.on; this.sfx.squelch(d.on); return; }
-    if (!this.pc) this.ensurePeer();
-    const pc = this.pc;
     try {
-      if (d.type === 'offer') {
-        if (pc.signalingState !== 'stable') { this.closePeer(); this.ensurePeer(); }
+      if (d.type === 'hello' && this.role === 'agent') {
+        // LINE (re)joined or lost its peer: offer again unless a fresh offer is already in flight
+        if (!this.connected && (!this.pc || performance.now() - this.pcAt > 3000)) await this.offer();
+        return;
+      }
+      if (d.type === 'offer' && this.role === 'handler') {
+        const pc = this.makePeer(d.sid);
+        await pc.setRemoteDescription(d.sdp);
+        const tr = pc.getTransceivers()[0];
+        if (tr) { tr.direction = 'sendrecv'; this.sender = tr.sender; if (this.track) await this.sender.replaceTrack(this.track); }
+        const ans = await pc.createAnswer();
+        await pc.setLocalDescription(ans);
+        this.net.send({ t: 'rtc', d: { type: 'answer', sid: d.sid, sdp: pc.localDescription } });
+        for (const c of this.pendingIce?.[d.sid] || []) await pc.addIceCandidate(c).catch(() => {});
+        return;
+      }
+      if (d.type === 'answer' && this.role === 'agent' && d.sid === this.sid && this.pc?.signalingState === 'have-local-offer') {
         await this.pc.setRemoteDescription(d.sdp);
-        const ans = await this.pc.createAnswer();
-        await this.pc.setLocalDescription(ans);
-        this.net.send({ t: 'rtc', d: { type: 'answer', sdp: this.pc.localDescription } });
-      } else if (d.type === 'answer') {
-        if (pc.signalingState === 'have-local-offer') await pc.setRemoteDescription(d.sdp);
-      } else if (d.type === 'ice') {
-        await pc.addIceCandidate(d.c).catch(() => {});
+        return;
+      }
+      if (d.type === 'ice') {
+        if (this.pc && d.sid === this.sid && this.pc.remoteDescription) await this.pc.addIceCandidate(d.c).catch(() => {});
+        else ((this.pendingIce ||= {})[d.sid] ||= []).push(d.c);
       }
     } catch (e) { console.warn('rtc', e); }
   }
@@ -154,6 +222,8 @@ export class Voice {
   }
 
   update(dt, input) {
+    this.wdT = (this.wdT || 0) + dt;
+    if (this.wdT > 1) { this.wdT = 0; this.watchdog(); }
     if (this.mode === 'hold' && this.track) {
       const want = input.down('KeyV') && !(input.textCapture && input.textCapture.active);
       this.setTx(want);

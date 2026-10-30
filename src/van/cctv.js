@@ -95,7 +95,9 @@ export class CCTV {
     this.engine = engine; this.world = world;
     this.cams = CAMERAS.map((def, i) => {
       const cam = new THREE.PerspectiveCamera(def.fov || 62, 4 / 3, 0.08, 70);
-      cam.position.set(...def.pos);
+      // render from just in front of the lens of the physical camera prop
+      const fwd = new THREE.Vector3(def.look[0] - def.pos[0], def.look[1] - def.pos[1], def.look[2] - def.pos[2]).normalize();
+      cam.position.set(...def.pos).addScaledVector(fwd, 0.3);
       const { yaw, pitch } = camDir(def);
       return { def, idx: i, cam, yaw0: yaw, pitch0: pitch, pan: 0, tilt: 0, zoom: 1, ir: false, lastRender: 0 };
     });

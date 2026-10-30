@@ -48,6 +48,9 @@ export class HandlerView {
     ];
     sfx.ambience('van', true);
     this.lastObjective = null;
+    this.keyHelp = '<kbd>M</kbd> 监视器 <kbd>T</kbd> 终端 <kbd>Tab</kbd> 蓝图<br>点击设备凑近 · <kbd>右键</kbd>/<kbd>Esc</kbd> 坐回去<br><kbd>V</kbd> 按住说话 · <kbd>F1</kbd> 再看一次';
+    hud.keys(this.keyHelp);
+    this.keysT = 60;
   }
 
   // ------------------------------------------------------------------ scene
@@ -507,6 +510,8 @@ export class HandlerView {
   // ------------------------------------------------------------------ update
   update(dt, t) {
     const I = this.input, s = this.world.state, now = this.net.serverNow();
+    if (this.keysT > 0 && (this.keysT -= dt) <= 0) this.hud.keys('');
+    if (I.hit('F1') && this.focus !== 'terminal') { this.keysT = 20; this.hud.keys(this.keyHelp); }
     if (s && this.lastObjective !== s.objective && s.phase === 'playing') {
       this.lastObjective = s.objective;
       const o = OBJECTIVES[s.objective];

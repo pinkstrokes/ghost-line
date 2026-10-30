@@ -12,7 +12,7 @@ fs.mkdirSync(OUT, { recursive: true });
 const cache = path.join(os.homedir(), 'Library/Caches/ms-playwright');
 const dir = fs.readdirSync(cache).filter((d) => d.startsWith('chromium-')).sort().pop();
 const exe = path.join(cache, dir, 'chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing');
-const browser = await chromium.launch({ executablePath: fs.existsSync(exe) ? exe : undefined, args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'] });
+const browser = await chromium.launch({ executablePath: fs.existsSync(exe) ? exe : undefined, args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required', '--disable-features=WebRtcHideLocalIpsWithMdns'] });
 const ctxA = await browser.newContext({ viewport: { width: 1280, height: 800 }, permissions: ['microphone'] });
 const ctxB = await browser.newContext({ viewport: { width: 1280, height: 800 }, permissions: ['microphone'] });
 const A = await ctxA.newPage(), Bp = await ctxB.newPage();
@@ -58,6 +58,20 @@ try {
   const mB = await Bp.evaluate(() => __gl.mission.gate.code);
   console.log(`  seeds agree: ${m.gate === mB}  (code ${m.gate})`);
   await sleep(1500);
+  step('voice: WebRTC link between the two browsers');
+  const en = (p) => p.evaluate(() => __gl.voice.enableFake());
+  console.log('  mic enable:', await en(A), await en(Bp));
+  try {
+    await waitFor(A, () => __gl.voice.connected, null, 'GHOST voice connected', 45000);
+    await waitFor(Bp, () => __gl.voice.connected, null, 'LINE voice connected', 15000);
+    await A.keyboard.down('v');
+    await sleep(1500);
+    const lv = await Bp.evaluate(() => __gl.voice.inLevel);
+    const rx = await Bp.evaluate(() => __gl.voice.remoteTx);
+    await A.keyboard.up('v');
+    console.log(`  push-to-talk seen by LINE: ${rx}`);
+    console.log(`  voice connected both ways; LINE hears GHOST at level ${lv.toFixed(3)} (fake mic tone)`);
+  } catch (e) { console.log(`  ⚠ voice: ${e.message}`); }
 
   step('Z1 gatehouse: one wrong code, then the right one');
   await tp(A, 1.4, 1.6, 0, -0.1);
