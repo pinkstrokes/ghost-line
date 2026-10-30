@@ -152,6 +152,10 @@ export class Sfx {
   }
   clicks(pos) { for (let i = 0; i < 6; i++) this.noise(0.012, { vol: 0.3, freq: 2500 + Math.random() * 1500, q: 6, pos, at: i * (0.05 + Math.random() * 0.05), refDistance: 2.5 }); }
   creatureStep(pos, fast) { this.noise(0.05, { vol: fast ? 0.2 : 0.1, freq: 400, q: 1.5, pos, refDistance: 2.5 }); }
+  chime() { [660, 880, 1320].forEach((f, i) => this.tone(f, 0.5, { type: 'sine', vol: 0.07, at: i * 0.12 })); }
+  bolts(pos) { for (let i = 0; i < 6; i++) { this.noise(0.08, { vol: 0.25, freq: 600, q: 2, pos, at: i * 0.18 }); this.tone(90, 0.12, { type: 'sine', vol: 0.15, pos, at: i * 0.18 }); } }
+  ding() { this.tone(1046, 1.2, { type: 'sine', vol: 0.09 }); this.tone(1318, 1.2, { type: 'sine', vol: 0.06, at: 0.25 }); }
+  motor(pos, dur = 8) { this.tone(55, dur, { type: 'sawtooth', vol: 0.06, pos, attack: 1 }); this.noise(dur, { vol: 0.05, freq: 300, q: 0.7, pos, attack: 1 }); }
   lockdown() { for (let i = 0; i < 3; i++) this.tone(330, 0.5, { type: 'square', vol: 0.08, at: i * 0.7 }); }
   static(dur = 0.4, vol = 0.1) { this.noise(dur, { vol, freq: 3000, q: 0.3 }); }
 

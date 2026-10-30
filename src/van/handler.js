@@ -491,6 +491,8 @@ export class HandlerView {
     if (e.k === 'lockdown') { sfx.lockdown(); this.hud.toast('LOCKDOWN — 封锁了！打开终端 OVERRIDE', 'bad'); this.flashT = 1; }
     if (e.k === 'sfx' && e.name === 'granted') sfx.granted();
     if (e.k === 'spark') this.world.onSpark?.();
+    if (e.k === 'sfx' && ['optics', 'power'].includes(e.name)) sfx.chime();
+    if (e.k === 'sfx' && e.name === 'liftArrive') sfx.ding();
     if (e.k === 'deny') {/* terminal reports it */}
     if (e.k === 'win' || e.k === 'lose') sfx.ambience('van', false);
   }

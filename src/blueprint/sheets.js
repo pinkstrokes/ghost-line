@@ -10,7 +10,7 @@ import {
   arrowHead, dim, hatchRect, cloud, triangleTag, callout, northArrow, scaleBar, table, seeded,
 } from './style.js';
 
-const glyphCell = (g, size = 6) => (ctx, cx, cy) => drawGlyph(ctx, g, cx - size / 2, cy - size / 2, size, { color: INK, lineWidth: size * 0.1 });
+const glyphCell = (g, size = 7) => (ctx, cx, cy) => drawGlyph(ctx, g, cx - size / 2, cy - size / 2, size, { color: INK, lineWidth: size * 0.1 });
 
 // ------------------------------------------------------------------ 00 cover
 function cover(ctx, m) {
@@ -64,8 +64,8 @@ function cover(ctx, m) {
   hand(ctx, 'the hall cams see the lasers.\npress I on the monitor desk', 300, 470, 8, { rot: 0.03 });
   hand(ctx, 'the thing downstairs is blind.\nkeep them quiet. crouch = silent', 520, 380, 8, { rot: -0.04 });
   ctx.strokeStyle = RED; ctx.lineWidth = 0.6;
-  ctx.beginPath(); ctx.ellipse(565, 222, 26, 7, 0, 0, 7); ctx.stroke();
-  hand(ctx, 'ask GHOST\nfor the frame no.!', 600, 240, 7, { rot: 0.1 });
+  ctx.beginPath(); ctx.ellipse(568, 222, 30, 6, 0, 0, 7); ctx.stroke();
+  hand(ctx, 'ask GHOST for the\nframe no.!  →', 380, 214, 7, { rot: -0.05 });
   stamp(ctx, 'SECRET', 690, 70, 22, -0.12, rng);
   stamp(ctx, 'FILE COPY — DO NOT REMOVE', 340, 540, 9, 0.05, rng);
   titleBlock(ctx, { sheet: '00', title: 'COVER · INDEX', sub: 'GENERAL NOTES', rev: 'C' });
@@ -129,7 +129,7 @@ function site(ctx, m) {
   door('V', -11, -62, '');
   door('H', -8, -65, '');
   for (const [id, b] of Object.entries(BULKHEADS)) door(id, b.x, b.z, '');
-  door('LIFT', 12, -27, '');
+  door('LIFT', 12, -24.2, '');
   // cameras
   for (const cam of CAMERAS) {
     const [a, b] = P(cam.pos[0], cam.pos[2]);
@@ -173,18 +173,18 @@ function access(ctx, m) {
   const cols = [{ w: 18, title: 'GLYPH' }, ...G.colOrder.map((c) => ({ w: 20, title: LAMP_COLORS[c] }))];
   const rowsFor = (tbl) => G.rowOrder.map((g) => [glyphCell(g, 6.4), ...G.colOrder.map((c) => String(tbl[g][c]))]);
   // REV A (void) — placed first, where the eye lands
-  label(ctx, 'TABLE 7C-1  SERVICE ENTRY CODES  (REV A)', 34, 36, 5.2, { weight: 700 });
-  const t1 = table(ctx, 34, 44, cols, rowsFor(G.voidTable), { rowH: 8.6, size: 4.6, font: MONO, weight: 700 });
+  label(ctx, 'TABLE 7C-1  SERVICE ENTRY CODES  (REV A)', 34, 28, 5.2, { weight: 700 });
+  const t1 = table(ctx, 34, 44, cols, rowsFor(G.voidTable), { rowH: 10.5, size: 5.4, font: MONO, weight: 700 });
   ctx.strokeStyle = STAMP; ctx.lineWidth = 1.2;
   line(ctx, 34, 44, 34 + t1.w, 44 + t1.h); line(ctx, 34 + t1.w, 44, 34, 44 + t1.h);
   stamp(ctx, 'VOID', 34 + t1.w / 2, 44 + t1.h / 2, 18, -0.4, rng);
   hand(ctx, 'OLD — dont use!!', 40, 44 + t1.h + 10, 8);
   // REV B
   const bx = 180;
-  label(ctx, 'TABLE 7C-1  SERVICE ENTRY CODES  (REV B — CURRENT)', bx, 36, 5.2, { weight: 700 });
-  const t2 = table(ctx, bx, 44, cols, rowsFor(G.table), { rowH: 8.6, size: 4.6, font: MONO, weight: 700 });
+  label(ctx, 'TABLE 7C-1  SERVICE ENTRY CODES  (REV B — CURRENT)', bx, 28, 5.2, { weight: 700 });
+  const t2 = table(ctx, bx, 44, cols, rowsFor(G.table), { rowH: 10.5, size: 5.4, font: MONO, weight: 700 });
   cloud(ctx, bx - 5, 39, t2.w + 10, t2.h + 10);
-  triangleTag(ctx, bx + t2.w + 9, 40, 'B');
+  triangleTag(ctx, bx + t2.w + 12, 36, 'B');
   label(ctx, 'COLUMN = COLOUR OF THE STATUS LAMP BESIDE THE ACCESS PLATE.', bx, 44 + t2.h + 10, 3.6, { color: INK2 });
   label(ctx, 'D1, D2, D3 = DIGITS FOR THE PLATE GLYPHS, READ LEFT → RIGHT.', bx, 44 + t2.h + 16, 3.6, { color: INK2 });
   // check digit flowchart
@@ -370,7 +370,7 @@ function patch(ctx, m) {
   const dash = { solid: [], dash: [3.2, 1.8], dot: [0.3, 1.5] };
   let lx = 30;
   label(ctx, 'JUMPER CABLE BY LINE STYLE:', lx, 42, 3.8, { color: INK2 });
-  lx += 52;
+  lx += 64;
   for (const st of ['solid', 'dash', 'dot']) {
     ctx.save(); ctx.strokeStyle = INK; ctx.lineWidth = 0.8; ctx.lineCap = 'round'; ctx.setLineDash(dash[st]); line(ctx, lx, 42, lx + 18, 42); ctx.restore();
     label(ctx, `= ${lg[st]}`, lx + 21, 42, 3.8, { weight: 700 });
@@ -470,8 +470,8 @@ function undercroft(ctx, m) {
   const [lc, lr] = Z.lair;
   hand(ctx, '?', cx(lc) + cs / 2 + 12, cy(lr) + 14, 14, { rot: 0.2 });
   hand(ctx, 'every time I ask "where are you"\nGHOST tells me a code. find the box.', nx, 260, 7, { rot: -0.02 });
-  northArrow(ctx, nx + 20, 330);
-  scaleBar(ctx, nx + 50, 330, cs / 3, 9);
+  northArrow(ctx, nx + 20, 470);
+  scaleBar(ctx, nx + 50, 474, cs / 3, 9);
   titleBlock(ctx, { sheet: 'M-1', title: 'UNDERCROFT', sub: 'TUNNELS · DAMPERS · SENSORS', rev: 'C' });
   wear(ctx, rng);
 }
@@ -481,7 +481,7 @@ function optics(ctx, m) {
   const rng = seeded('O1', m.seed);
   paper(ctx, rng);
   const O = m.optics, Z = ZONES.optics;
-  const s = 20.5, ox = 44, oy = 62;
+  const s = 20.5, ox = 78, oy = 62;
   const X = (x) => ox + (x - Z.x0) * s, Y = (z) => oy + (z - Z.z0) * s;
   const LX = (i) => X(OPTICS.x0 + i + 0.5), LY = (j) => Y(OPTICS.z0 + j + 0.5);
   label(ctx, 'OPTICS LAB — BENCH LAYOUT  (PLAN, NORTH UP)', 30, 30, 6, { weight: 700 });
@@ -535,7 +535,7 @@ function optics(ctx, m) {
   ctx.beginPath(); ctx.arc(X(cam.pos[0]), Y(cam.pos[2]), 4, 0, 7); ctx.stroke();
   label(ctx, 'C06 (CEILING, LOOKING DOWN)', X(cam.pos[0]) + 6, Y(cam.pos[2]) - 6, 3.4, { weight: 700 });
   // right column: orientation legend + notes
-  const rx = 470;
+  const rx = 500;
   label(ctx, 'MIRROR MOUNTS', rx, 70, 6, { weight: 700 });
   const lcx = rx + 60, lcy = 130, lr = 34;
   ctx.strokeStyle = INK2; ctx.lineWidth = 0.4; ctx.beginPath(); ctx.arc(lcx, lcy, lr, 0, 7); ctx.stroke();

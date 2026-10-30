@@ -127,6 +127,11 @@ export class AgentView {
     if (e.k === 'sfx' && e.name === 'clunk') sfx.clunk(this.pos);
     if (e.k === 'sfx' && e.name === 'caught') { sfx.groan(this.pos); this.shake = 1; }
     if (e.k === 'dial') sfx.tick(this.pos);
+    if (e.k === 'sfx' && e.name === 'optics') sfx.chime();
+    if (e.k === 'sfx' && e.name === 'vault') sfx.bolts({ x: -11, y: 1.4, z: -62 });
+    if (e.k === 'sfx' && e.name === 'override') { sfx.granted(); this.hud.toast(`${e.id} OPEN`, 'good'); }
+    if (e.k === 'sfx' && e.name === 'lift') sfx.motor({ x: 12, y: 1.5, z: -22 }, 9);
+    if (e.k === 'sfx' && e.name === 'liftArrive') { sfx.ding(); this.hud.toast('LIFT ARRIVED — GET IN', 'good'); }
     if (e.k === 'lockdown') { sfx.lockdown(); this.flashT = 1; this.hud.toast('LOCKDOWN — GET OUT', 'bad'); }
   }
 
