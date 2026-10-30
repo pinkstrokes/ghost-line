@@ -18,12 +18,13 @@ function dialTexture() {
   c.strokeStyle = '#8a8676'; c.lineWidth = 6; c.beginPath(); c.arc(0, 0, 500, 0, 7); c.stroke();
   for (let n = 0; n < 100; n++) {
     const a = -Math.PI / 2 + (n / 100) * Math.PI * 2;
-    const r0 = n % 5 === 0 ? 400 : 430;
-    c.strokeStyle = '#e8e2cc'; c.lineWidth = n % 5 === 0 ? 7 : 4;
+    const r0 = n % 10 === 0 ? 392 : n % 5 === 0 ? 412 : 444;
+    c.strokeStyle = '#e8e2cc'; c.lineWidth = n % 5 === 0 ? 8 : 4;
     c.beginPath(); c.moveTo(Math.cos(a) * r0, Math.sin(a) * r0); c.lineTo(Math.cos(a) * 492, Math.sin(a) * 492); c.stroke();
-    c.save(); c.translate(Math.cos(a) * 352, Math.sin(a) * 352); c.rotate(a + Math.PI / 2);
-    c.fillStyle = n % 5 === 0 ? '#ffffff' : '#bdb7a4';
-    c.font = `700 ${n % 5 === 0 ? 46 : 30}px "Arial Black", "Helvetica Neue", sans-serif`;
+    if (n % 5) continue;
+    c.save(); c.translate(Math.cos(a) * 340, Math.sin(a) * 340); c.rotate(a + Math.PI / 2);
+    c.fillStyle = n % 10 === 0 ? '#ffffff' : '#cfc8b2';
+    c.font = `900 ${n % 10 === 0 ? 64 : 48}px "Arial Black", "Helvetica Neue", sans-serif`;
     c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText(String(n), 0, 0);
     c.restore();
@@ -120,13 +121,35 @@ export function buildVault(world) {
   const index = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.05, 3), new THREE.MeshBasicMaterial({ color: 0xff3020 }));
   index.rotation.z = Math.PI;
   index.position.set(R - 0.2, DY + 0.05 + 0.345, 0.215);
+  index.scale.set(1.2, 1.2, 1.2);
   pivot.add(index);
+  // mechanical readout window just under the index (exact number, so the call-outs stay clean)
+  const roCv = Object.assign(document.createElement('canvas'), { width: 128, height: 64 });
+  const roTex = new THREE.CanvasTexture(roCv); roTex.colorSpace = THREE.SRGBColorSpace;
+  const readout = new THREE.Mesh(new THREE.PlaneGeometry(0.13, 0.065), new THREE.MeshBasicMaterial({ map: roTex }));
+  readout.position.set(R - 0.2, DY + 0.05 + 0.43, 0.215);
+  pivot.add(readout);
+  const roFrame = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.085, 0.01), darkSteel);
+  roFrame.position.set(R - 0.2, DY + 0.05 + 0.43, 0.208);
+  pivot.add(roFrame);
+  let roShown = -1;
+  const drawReadout = (n) => {
+    if (n === roShown) return;
+    roShown = n;
+    const c = roCv.getContext('2d');
+    c.fillStyle = '#e9e2c8'; c.fillRect(0, 0, 128, 64);
+    c.fillStyle = '#111'; c.font = '900 50px "Courier New", monospace'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(String(n).padStart(2, '0'), 64, 35);
+    c.fillStyle = 'rgba(0,0,0,0.25)'; c.fillRect(0, 0, 128, 10); c.fillRect(0, 54, 128, 10);
+    roTex.needsUpdate = true;
+  };
+  drawReadout(V.start);
   // handle wheel
   const handle = new THREE.Group();
   handle.position.set(R + 0.62, DY - 0.1, 0.24);
   for (let k = 0; k < 3; k++) {
     const spoke = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.42, 6), darkSteel);
-    spoke.rotation.z = (k / 3) * Math.PI * 2;
+    spoke.rotation.z = -(k / 3) * Math.PI * 2;
     spoke.position.set(Math.sin((k / 3) * Math.PI * 2) * 0.21, Math.cos((k / 3) * Math.PI * 2) * 0.21, 0);
     handle.add(spoke);
     const ball = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), steel);
@@ -186,7 +209,7 @@ export function buildVault(world) {
     label: () => 'INSPECT VAULT DOOR',
     enabled: () => !world.state?.vault?.open,
     inspect: {
-      camPos: new THREE.Vector3(DX - 0.02, DY + 0.06, DZ + 1.35), lookAt: new THREE.Vector3(DX - 0.02, DY + 0.0, DZ), fov: 50, res: 2.6,
+      camPos: new THREE.Vector3(DX - 0.02, DY + 0.12, DZ + 1.5), lookAt: new THREE.Vector3(DX - 0.02, DY + 0.08, DZ), fov: 50, res: 2.4,
       buttons: [bL, bR, bSet, handleHit],
       hint: 'A/← 向左(数字变大)  D/→ 向右(数字变小)  按住连转  ·  SPACE = SET  ·  H = 拉把手',
       onButton: (b) => {
@@ -236,6 +259,7 @@ export function buildVault(world) {
       while (d < -Math.PI) d += Math.PI * 2;
       dialAngle += d * Math.min(1, dt * 18);
       dial.rotation.z = dialAngle;
+      drawReadout(s?.vault?.dial ?? V.start);
       knob.rotation.y = dialAngle;
       handle.rotation.z = s?.vault?.open ? Math.min(handle.rotation.z + dt * 2, 1.2) : 0;
       const taken = s?.vault?.taken;
