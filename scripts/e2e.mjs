@@ -84,6 +84,21 @@ try {
   await shot(Bp, '01-line-cam01');
   await shot(A, '01-ghost-door');
 
+  step('pause menu: Settings and back must return to the pause menu, then resume');
+  await A.evaluate(() => document.exitPointerLock?.());
+  await A.keyboard.press('Escape');
+  await sleep(300);
+  const paused = await A.evaluate(() => !!document.querySelector('#overlay #resume'));
+  if (paused) {
+    await A.click('#overlay #settings'); await sleep(200);
+    await A.click('#overlay #back'); await sleep(200);
+    const back = await A.evaluate(() => !!document.querySelector('#overlay #resume'));
+    await A.click('#overlay #resume'); await sleep(200);
+    const clear = await A.evaluate(() => document.getElementById('overlay').innerHTML === '');
+    console.log(`  pause → settings → back shows pause again: ${back}; resume clears overlay: ${clear}`);
+    if (!back || !clear) throw new Error('pause menu trap');
+  } else console.log('  (pause menu did not open: pointer state differs in headless)');
+
   step('Z2 laser hall: trip a beam on purpose, then walk out');
   await tp(A, 0, -1.5, 0, 0);
   await Bp.evaluate(() => { const v = __gl.game.view; v.setFocus('monitors'); v.mainIdx = 2; v.cctv.cams[2].ir = true; v.cctv.cams[1].ir = true; });

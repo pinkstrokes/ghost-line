@@ -38,7 +38,9 @@ export class Terminal {
     this.say('KESTREL-9 BUILDING MANAGEMENT SYSTEM  rev 4.1 (1986)');
     this.say('LINK VIA MAINTENANCE MODEM ... OK');
     this.say("TYPE 'HELP' FOR COMMANDS.");
-    net.on('ev', (m) => this.onEvent(m.e, m.now));
+    this.unsub = net.on('ev', (m) => this.onEvent(m.e, m.now));
+    this.focused = false;
+    this.animAcc = 0;
   }
 
   say(text, color = G) { this.out.push({ text, color }); if (this.out.length > 40) this.out.shift(); this.dirty = true; }
@@ -67,8 +69,13 @@ export class Terminal {
 
   key(e) {
     const s = this.world.state;
-    const k = e.key;
-    if (e.altKey || e.metaKey || e.ctrlKey) return false; // Alt = push-to-talk, leave shortcuts alone
+    if (e.metaKey || e.ctrlKey || e.code === 'AltLeft' || e.code === 'AltRight') return false; // shortcuts / push-to-talk
+    // with Option held (push-to-talk) e.key is a special character on macOS, so read the physical key
+    let k = e.key;
+    if (e.altKey) {
+      const m = /^(Key([A-Z])|Digit([0-9])|Numpad([0-9]))$/.exec(e.code);
+      k = m ? (m[2] || m[3] || m[4]) : e.code === 'Space' ? ' ' : e.code === 'BracketLeft' ? '[' : e.code === 'BracketRight' ? ']' : e.key;
+    }
     if (/^F[1-6]$/.test(e.code)) { this.prog = PROGRAMS[+e.code.slice(1) - 1].id; this.sfx.keyClack(); this.dirty = true; return true; }
     if (k === '[' || k === ']') {
       const i = PROGRAMS.findIndex((p) => p.id === this.prog);
@@ -169,7 +176,9 @@ export class Terminal {
     this.scopeEvents = this.scopeEvents.filter((e) => now - e.t < 1.3);
     const s = this.world.state;
     if (s !== this.lastState) { this.lastState = s; this.dirty = true; }
-    if (this.prog === 'acoustic' || this.prog === 'sensors' || this.prog === 'sys' || this.prog === 'override') this.dirty = true;
+    // animated views redraw at 30 Hz while LINE looks at the terminal, 8 Hz otherwise
+    this.animAcc += dt;
+    if (['acoustic', 'sensors', 'sys', 'override'].includes(this.prog) && this.animAcc > (this.focused ? 1 / 30 : 1 / 8)) { this.animAcc = 0; this.dirty = true; }
     if (this.dirty) { this.draw(); this.dirty = false; this.tex.needsUpdate = true; }
   }
 
@@ -314,4 +323,6 @@ export class Terminal {
     const liftTxt = lift === 'idle' ? (s.doors.L3 ? "IDLE — TYPE 'LIFT'" : 'INHIBITED') : lift === 'called' ? `ARRIVING ${Math.max(0, (s.lockdown.liftAt - now) / 1000).toFixed(0)}s` : 'AT LEVEL — DOORS OPEN';
     this.text(`FREIGHT LIFT: ${liftTxt}`, 32, y + 370, lift === 'arrived' ? G : AMB, 24);
   }
+
+  dispose() { this.unsub(); this.tex.dispose(); }
 }

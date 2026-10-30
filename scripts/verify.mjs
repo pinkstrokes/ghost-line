@@ -133,6 +133,7 @@ function fullRun(seed, diff) {
   const room = new Room({ code: 'TEST', seed, difficulty: diff, now: () => clock, send: (to, msg) => sent.push(msg) });
   const A = { id: 'a' }, H = { id: 'h' };
   room.join('agent', 'A', A); room.join('handler', 'H', H);
+  room.handle(A, { t: 'ready', v: true }); room.handle(H, { t: 'ready', v: true });
   room.handle(A, { t: 'start', seed });
   const m = room.mission, s = room.state;
   const act = (who, a) => room.handle(who, { t: 'act', a });
@@ -190,6 +191,29 @@ function fullRun(seed, diff) {
   stats.listener = (stats.listener || 0) + (reasons.length - other.length);
   if (other.length) return `strikes: ${other.join(', ')}`;
   return null;
+}
+
+// ---- regression checks for review findings (room logic)
+{
+  let clock = 5_000_000;
+  const room = new Room({ code: 'REG', seed: 'REG1', now: () => clock, send: () => {} });
+  const A = { id: 'a' }, H = { id: 'h' };
+  room.join('agent', 'A', A); room.join('handler', 'H', H);
+  const s = () => room.state;
+  room.handle(A, { t: 'start' });
+  if (s().phase === 'playing') fail('REG', 'start accepted while nobody was ready');
+  room.handle(A, { t: 'ready', v: true }); room.handle(H, { t: 'ready', v: true }); room.handle(A, { t: 'start' });
+  if (s().phase !== 'playing') fail('REG', 'start refused with both ready');
+  const act = (who, a) => room.handle(who, { t: 'act', a });
+  for (const k of ['1', '2', '3', '4', 'ENT', 'ENT', 'ENT']) act(A, { k: 'key', v: k === '1' && room.mission.gate.code[0] === '1' ? '9' : k });
+  if (s().strikes !== 1) fail('REG', `repeated ENT gave ${s().strikes} strikes`);
+  act(A, { k: 'handle' }); act(A, { k: 'handle' });
+  if (s().strikes !== 2) fail('REG', `double HANDLE gave ${s().strikes - 1} strikes`);
+  room.triggerLockdown(true);
+  clock += 3000; act(A, { k: 'hazard', kind: 'cable' }); clock += 300; act(A, { k: 'hazard', kind: 'pit' });
+  if (s().strikes !== 4) fail('REG', 'pit right after a cable shock was swallowed');
+  room.handle(A, { t: 'lobby' });
+  if (s().players.agent.ready || s().players.handler.ready) fail('REG', 'ready flags survived back-to-lobby');
 }
 
 const t0 = Date.now();

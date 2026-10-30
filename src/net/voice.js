@@ -176,8 +176,14 @@ export class Voice {
     } catch (e) { console.warn('rtc', e); }
   }
 
+  stopRemote() {
+    for (const n of this.remoteNodes || []) { try { n.stop?.(); } catch { /* */ } try { n.disconnect(); } catch { /* */ } }
+    this.remoteNodes = [];
+  }
+
   playRemote(stream) {
     const ctx = this.sfx.ctx || this.sfx.init();
+    this.stopRemote();
     // Chrome only pulls remote WebRTC audio into WebAudio if a media element is consuming it.
     if (!this.audioEl) { this.audioEl = new Audio(); this.audioEl.muted = true; }
     this.audioEl.srcObject = stream;
@@ -200,6 +206,7 @@ export class Voice {
     this.hiss = ctx.createGain(); this.hiss.gain.value = 0;
     n.connect(nf).connect(this.hiss).connect(this.sfx.voiceBus);
     n.start();
+    this.remoteNodes = [src, hp, lp, peak, shaper, g, this.inAn, n, nf, this.hiss];
   }
 
   setTx(on) {
@@ -226,7 +233,10 @@ export class Voice {
     if (this.wdT > 1) { this.wdT = 0; this.watchdog(); }
     if (this.mode === 'hold' && this.track) {
       // V, or Option/Alt (which still works while LINE is typing in the terminal)
-      const want = (input.down('KeyV') && !(input.textCapture && input.textCapture.active)) || input.down('AltLeft') || input.down('AltRight');
+      // V, or (LINE only) Option/Alt, which keeps working while typing in the terminal.
+      // GHOST doesn't get Alt: on Windows Alt+D/E/F are browser shortcuts.
+      const alt = this.role === 'handler' && (input.down('AltLeft') || input.down('AltRight'));
+      const want = (input.down('KeyV') && !(input.textCapture && input.textCapture.active)) || alt;
       this.setTx(want);
     }
     const lv = this.track && this.track.enabled ? this.rms(this.micAn) : 0;
@@ -246,5 +256,11 @@ export class Voice {
     }
   }
 
-  dispose() { this.unsub(); this.unsub2(); this.closePeer(); this.stream?.getTracks().forEach((t) => t.stop()); }
+  dispose() {
+    this.unsub(); this.unsub2();
+    this.closePeer();
+    this.stopRemote();
+    this.stream?.getTracks().forEach((t) => t.stop());
+    if (this.audioEl) { this.audioEl.pause(); this.audioEl.srcObject = null; }
+  }
 }

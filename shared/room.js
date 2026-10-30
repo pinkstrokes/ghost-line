@@ -32,7 +32,7 @@ export class Room {
     this.now = now;
     this.players = { agent: null, handler: null };
     this.pose = null;
-    this.lastHazard = 0;
+    this.lastHazard = {};
     this.lastTrip = 0;
     this.setup(seed || randomSeed(), difficulty);
     this.state.phase = 'lobby';
@@ -52,7 +52,7 @@ export class Room {
       strikes: 0,
       maxStrikes: this.mission.diff.strikes,
       practice: null,
-      players: keepPlayers || { agent: null, handler: null },
+      players: keepPlayers ? Object.fromEntries(Object.entries(keepPlayers).map(([k, v]) => [k, v && { ...v, ready: false }])) : { agent: null, handler: null },
       objective: 'gate',
       splits: {},
       result: null,
@@ -151,10 +151,14 @@ export class Room {
         if (msg.difficulty) this.setup(s.seed, msg.difficulty);
         this.broadcast();
         return;
-      case 'start':
+      case 'start': {
         if (s.phase === 'playing') return;
+        const P = s.players;
+        // with both seats filled, both must be ready (alone = solo/practice, allowed)
+        if (P.agent?.connected && P.handler?.connected && !(P.agent.ready && P.handler.ready)) return;
         this.start({ difficulty: msg.difficulty || s.difficulty, practice: msg.practice, seed: msg.seed || (s.phase === 'lobby' ? s.seed : randomSeed()) });
         return;
+      }
       case 'lobby':
         this.setup(randomSeed(), s.difficulty);
         this.broadcast();
@@ -208,6 +212,7 @@ export class Room {
         const g = s.gate;
         if (a.v === 'CLR') g.entry = '';
         else if (a.v === 'ENT') {
+          if (g.entry.length !== 4) return; // a stray second ENT on an empty display is not another attempt
           if (g.entry === m.gate.code) {
             s.doors.A = 1; g.status = 'ok';
             this.event({ k: 'sfx', name: 'granted', at: 'gate' });
@@ -337,6 +342,8 @@ export class Room {
       }
       case 'handle': {
         if (!A || s.vault.open) return;
+        if (s.vault.stage < 3 && now - (this.lastHandle || 0) < 2500) return; // a double-click is one tamper, not two
+        this.lastHandle = now;
         if (s.vault.stage >= 3) {
           s.vault.open = 1; s.doors.V = 1;
           this.event({ k: 'sfx', name: 'vault', at: 'vault' });
@@ -371,8 +378,9 @@ export class Room {
         return;
       }
       case 'hazard': {
-        if (!A || now - this.lastHazard < 2500) return;
-        this.lastHazard = now;
+        const hk = a.kind === 'pit' ? 'pit' : 'cable';
+        if (!A || now - (this.lastHazard[hk] || 0) < 2200) return;
+        this.lastHazard[hk] = now;
         if (a.kind === 'pit') {
           this.strike('GHOST FELL — SPINE COLLAPSE', { zone: 'escape' });
           const cp = s.lockdown.checkpoint;

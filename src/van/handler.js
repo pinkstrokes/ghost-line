@@ -576,6 +576,7 @@ export class HandlerView {
     else if (this.focus === 'terminal') this.updateTerminalClicks();
     else if (this.focus === 'cipher') this.updateCipher(dt);
     else if (this.focus === 'blueprint') this.blueprint.update(dt);
+    this.terminal.focused = this.focus === 'terminal';
     this.terminal.update(dt);
     if (((t * 8) | 0) !== this.clockTick) { this.clockTick = (t * 8) | 0; this.drawClock(s, now); this.drawSelector(); }
     // cipher easing
@@ -744,7 +745,8 @@ export class HandlerView {
       const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
       for (const mm of mats) { if (seen.has(mm)) continue; seen.add(mm); mm.map?.dispose(); mm.dispose(); }
     });
-    this.terminal.tex.dispose();
+    this.terminal.dispose();
+    this.blueprint.dispose();
     this.input.textCapture = null;
     sfx.ambience('van', false);
   }

@@ -192,7 +192,7 @@ export function buildMaze(world) {
       const c = s.maze?.creature;
       const active = s.patch?.power && !s.maze?.cleared && c;
       L.g.visible = !!active;
-      if (!active) return;
+      if (!active) { world.flashFlicker = 0; return; }
       const target = new THREE.Vector3(c.x, 0, c.z);
       if (first) { lp.copy(target); first = false; }
       const prev = lp.clone();

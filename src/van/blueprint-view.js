@@ -58,7 +58,7 @@ export class BlueprintView {
       if (this.drag.draw) { this.cur = { pts: [this.toSheet(e.clientX, e.clientY)], w: 0.55 }; this.strokes[this.sheet].push(this.cur); }
       e.preventDefault();
     });
-    window.addEventListener('mousemove', (e) => {
+    this.onMove = (e) => {
       if (!this.drag || !this.isOpen) return;
       if (this.drag.draw) {
         const p = this.toSheet(e.clientX, e.clientY), last = this.cur.pts[this.cur.pts.length - 1];
@@ -68,8 +68,12 @@ export class BlueprintView {
         this.drag.x = e.clientX; this.drag.y = e.clientY;
       }
       this.touch();
-    });
-    window.addEventListener('mouseup', () => { if (this.drag?.draw) this.sfx?.click(0.03); this.drag = null; this.cur = null; });
+    };
+    this.onUp = () => { if (this.drag?.draw) this.sfx?.click(0.03); this.drag = null; this.cur = null; };
+    this.onResize = () => { if (this.isOpen) { this.sizeCanvas(); this.touch(); } };
+    window.addEventListener('mousemove', this.onMove);
+    window.addEventListener('mouseup', this.onUp);
+    window.addEventListener('resize', this.onResize);
     cv.addEventListener('contextmenu', (e) => e.preventDefault());
     cv.addEventListener('wheel', (e) => {
       e.preventDefault();
@@ -81,7 +85,15 @@ export class BlueprintView {
       v.scale = ns;
       this.touch();
     }, { passive: false });
-    window.addEventListener('resize', () => { if (this.isOpen) { this.sizeCanvas(); this.touch(); } });
+  }
+
+  dispose() {
+    this.close();
+    if (this.onMove) { window.removeEventListener('mousemove', this.onMove); window.removeEventListener('mouseup', this.onUp); window.removeEventListener('resize', this.onResize); }
+    this.cache.clear();
+    this.detail = null;
+    if (this.layer) this.layer.innerHTML = '';
+    this.canvas = null;
   }
 
   sizeCanvas() {

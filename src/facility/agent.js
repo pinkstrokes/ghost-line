@@ -31,7 +31,7 @@ export class AgentView {
     world.agentBody = { x: this.pos.x, y: 0, z: this.pos.z, h: H_STAND, teleporting: false };
     world.act = (a) => net.send({ t: 'act', a });
     world.onLocalAlarm = () => { this.flashT = 1; this.shake = 0.4; };
-    world.onFall = () => { this.vy = -6; this.fadeTarget = 0; this.shake = 1; sfx.thud(this.pos); };
+    world.onFall = () => { this.vy = -6; this.fadeTarget = 0; this.shake = 1; this.fallT = 3; sfx.thud(this.pos); };
     world.onShock = (c) => {
       this.shake = 0.8; this.flashT = 0.6;
       const dx = this.pos.x - c.x, dz = this.pos.z - c.z, d = Math.hypot(dx, dz) || 1;
@@ -180,7 +180,7 @@ export class AgentView {
     const canMove = !this.inspect && playing && !this.world.agentBody.teleporting;
     const fwd = (I.down('KeyW') || I.down('ArrowUp') ? 1 : 0) - (I.down('KeyS') || I.down('ArrowDown') ? 1 : 0);
     const str = (I.down('KeyD') || I.down('ArrowRight') ? 1 : 0) - (I.down('KeyA') || I.down('ArrowLeft') ? 1 : 0);
-    const wantCrouch = I.down('KeyC') || I.down('ControlLeft') || I.down('ControlRight');
+    const wantCrouch = I.down('KeyC'); // not Ctrl: Ctrl+W would close the tab
     if (wantCrouch) this.crouching = true;
     else if (this.crouching) {
       // stand only if there's headroom
@@ -282,7 +282,8 @@ export class AgentView {
     sfx.ambience('facility', zone !== 'gate');
     sfx.ambience('smoke', !!smoke);
     sfx.ambience('klaxon', !!s?.lockdown?.active && playing);
-    // fade / flash
+    // fade / flash (a fall fades out; if no teleport comes back, fade in anyway)
+    if (this.fallT > 0 && (this.fallT -= dt) <= 0 && this.fadeTarget === 0) this.fadeTarget = 1;
     this.fade += (this.fadeTarget - this.fade) * Math.min(1, dt * 8);
     this.flashT = Math.max(0, this.flashT - dt * 1.4);
     const P = this.engine.post.uniforms;

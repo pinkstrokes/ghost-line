@@ -26,6 +26,9 @@ await B.waitForFunction(() => __gl.state?.players?.agent);
 async function scene(name, zone, agentFn, handlerFn, wait = 3500) {
   await A.evaluate(() => __gl.net.send({ t: 'lobby' }));
   await sleep(400);
+  await A.evaluate(() => __gl.net.send({ t: 'ready', v: true }));
+  await B.evaluate(() => __gl.net.send({ t: 'ready', v: true }));
+  await sleep(200);
   await A.evaluate((z) => __gl.net.send({ t: 'start', practice: z }), zone);
   await A.waitForFunction(() => __gl.game && __gl.state.phase === 'playing');
   await B.waitForFunction(() => __gl.game && __gl.state.phase === 'playing');

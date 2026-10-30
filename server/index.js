@@ -89,17 +89,36 @@ function makeRoom(difficulty) {
 
 function attach(server) {
   const wss = new WebSocketServer({ server, path: '/ws', maxPayload: 64 * 1024 });
+  // heartbeat: a socket that stops answering pings is dropped so its seat frees up
+  const beat = setInterval(() => {
+    for (const ws of wss.clients) {
+      if (ws.isAlive === false) { ws.terminate(); continue; }
+      ws.isAlive = false;
+      try { ws.ping(); } catch { /* */ }
+    }
+  }, 8000);
+  wss.on('close', () => clearInterval(beat));
   wss.on('connection', (ws) => {
     let entry = null;
+    ws.isAlive = true;
+    ws.lastSeen = Date.now();
+    ws.on('pong', () => { ws.isAlive = true; });
     const reply = (msg) => ws.readyState === 1 && ws.send(JSON.stringify(msg));
     ws.on('message', (buf) => {
       let msg;
+      ws.lastSeen = Date.now();
       try { msg = JSON.parse(buf); } catch { return; }
       if (msg.t === 'create' || msg.t === 'join') {
         if (entry) { entry.room.leave(ws); entry.conns.delete(ws); }
         const target = msg.t === 'create' ? makeRoom(msg.difficulty) : rooms.get(String(msg.code || '').toUpperCase());
         if (!target) { reply({ t: 'error', m: 'NO SUCH OPERATION CODE' }); return; }
         let role = ROLES.includes(msg.role) ? msg.role : null;
+        // rejoining your own seat: evict a connection that has gone quiet (clients ping every 2 s)
+        const holder = role && target.room.players[role];
+        if (holder && holder !== ws && Date.now() - (holder.lastSeen || 0) > 6000) {
+          target.room.leave(holder); target.conns.delete(holder);
+          try { holder.terminate(); } catch { /* */ }
+        }
         const free = ROLES.filter((r) => !target.room.players[r]);
         if (!role || target.room.players[role]) role = free[0] || null;
         if (!role) { reply({ t: 'error', m: 'BOTH SEATS ARE TAKEN' }); return; }

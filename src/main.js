@@ -92,6 +92,7 @@ function soloScreen(name) {
 }
 
 function howToScreen(back) {
+  app.sub = true;
   html(`<div class="screen"><div class="card howto">
     <h2 class="title" style="font-size:40px">HOW TO PLAY</h2>
     <p>一个人当 <b style="color:var(--ghost)">GHOST</b>：第一人称潜入废弃设施 KESTREL-9。另一个人当 <b style="color:var(--handler)">LINE</b>：坐在两公里外的监控面包车里，有设施的原始蓝图、偷接的监控摄像头和一台接进楼控系统的终端。</p>
@@ -110,10 +111,12 @@ function howToScreen(back) {
     <p>每次犯错（输错码、碰激光、被怪物抓到……）警报 +1。警报满了任务失败。时间到了也失败。</p>
     <button id="back" style="margin-top:16px">返回</button>
   </div></div>`);
-  on('#back', 'click', back);
+  on('#back', 'click', () => { app.sub = false; back(); });
 }
 
 function settingsScreen(back) {
+  const prevDiff = settings.difficulty;
+  app.sub = true;
   html(`<div class="screen"><div class="card">
     <h2 class="title" style="font-size:40px">SETTINGS</h2>
     <div class="col" style="margin-top:14px">
@@ -147,7 +150,8 @@ function settingsScreen(back) {
     sfx.setVolume('master', settings.master);
     sfx.setVolume('voice', settings.voice);
     app.voice?.setMode(settings.ptt);
-    if (app.net && app.state?.phase === 'lobby') app.net.send({ t: 'settings', difficulty: settings.difficulty });
+    if (app.net && app.state?.phase === 'lobby' && settings.difficulty !== prevDiff) app.net.send({ t: 'settings', difficulty: settings.difficulty });
+    app.sub = false;
     back();
   });
 }
@@ -168,6 +172,8 @@ async function connect(msg) {
 
 function attachNet(net) {
   if (app.net && app.net !== net) app.net.close();
+  // the radio belongs to one connection: rebuild it for the new one
+  if (app.voice) { app.voice.dispose(); app.voice = null; }
   app.net = net;
   sfx.init();
   net.on('error', (m) => { forgetSession(); titleScreen(m.m); });
@@ -187,7 +193,9 @@ function attachNet(net) {
       if (!was && now && prev.players[other]) hud.toast(`${other === 'agent' ? 'GHOST' : 'LINE'} 重新连上了`, 'good');
     }
     if (app.game) app.game.world.setState(m.s);
-    if (!prev || prev.phase !== m.s.phase || prev.seed !== m.s.seed || prev.difficulty !== m.s.difficulty || m.s.phase === 'lobby') render();
+    const changed = !prev || prev.phase !== m.s.phase || prev.seed !== m.s.seed || prev.difficulty !== m.s.difficulty;
+    // lobby updates re-render the lobby, but not while this player is reading Settings / How to play
+    if (changed || (m.s.phase === 'lobby' && !app.sub)) render();
   });
 
 }
@@ -390,9 +398,13 @@ function pauseMenu() {
     <div class="col"><button class="primary" id="resume">继续</button><button id="settings">设置</button><button id="howto">玩法</button><button id="abort">放弃任务（回到大厅）</button></div>
   </div></div>`);
   on('#resume', 'click', () => { html(''); input.lock(); });
-  on('#settings', 'click', () => settingsScreen(pauseMenu));
-  on('#howto', 'click', () => howToScreen(pauseMenu));
-  on('#abort', 'click', () => { html(''); app.net.send({ t: 'lobby' }); });
+  const back = () => { html(''); pauseMenu(); };
+  on('#settings', 'click', () => settingsScreen(back));
+  on('#howto', 'click', () => howToScreen(back));
+  const abort = on('#abort', 'click', () => {
+    if (!abort.dataset.armed) { abort.dataset.armed = '1'; abort.textContent = '再点一次确认（两个人都会回到大厅）'; return; }
+    html(''); app.net.send({ t: 'lobby' });
+  });
 }
 
 function forgetSession() { try { sessionStorage.removeItem('ghostline.session'); } catch { /* */ } }
