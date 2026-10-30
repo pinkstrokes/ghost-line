@@ -96,12 +96,13 @@ function howToScreen(back) {
     <h4>说话</h4>
     <p>按住 <kbd>V</kbd>（或 <kbd>Option</kbd>/<kbd>Alt</kbd>，LINE 在终端打字时用这个）用对讲机说话，设置里可以改成常开麦。坐在同一个房间也行，开 Discord 也行。</p>
     <h4>GHOST</h4>
-    <p><kbd>WASD</kbd> 移动 <kbd>鼠标</kbd> 看 <kbd>Shift</kbd> 跑（有声音） <kbd>C</kbd> 蹲（没声音） <kbd>空格</kbd> 跳 <kbd>F</kbd> 手电 <kbd>E</kbd> 查看/交互 <kbd>Tab</kbd> 抬手看表（时间、警报、目标）</p>
+    <p><kbd>WASD</kbd> 移动 <kbd>鼠标</kbd> 看 <kbd>Shift</kbd> 跑（有声音） <kbd>C</kbd> 蹲（没声音） <kbd>空格</kbd> 跳 <kbd>F</kbd> 手电 <kbd>E</kbd> 查看/交互（镜子：<kbd>E</kbd> 顺时针 <kbd>Q</kbd> 逆时针）<kbd>Tab</kbd> 抬手看表（时间、警报、目标）<kbd>F1</kbd> 按键提示</p>
     <h4>LINE</h4>
-    <p><kbd>鼠标</kbd> 在车里转头，点击设备凑近操作，<kbd>右键</kbd>/<kbd>Esc</kbd> 退回座位。<br>
+    <p><kbd>鼠标</kbd> 在车里转头，点击设备凑近操作，<kbd>右键</kbd>/<kbd>Esc</kbd> 退回座位。快捷键 <kbd>M</kbd> 监视器 <kbd>T</kbd> 终端 <kbd>Tab</kbd> 蓝图。<br>
     监视器：<kbd>1</kbd>–<kbd>0</kbd> 选摄像头，<kbd>I</kbd> 红外/热成像，<kbd>方向键</kbd>/拖动 云台，<kbd>滚轮</kbd> 变焦。<br>
     蓝图：拖动平移、滚轮缩放、<kbd>Shift</kbd>+拖动 用红笔画、<kbd>X</kbd> 擦掉这一页的笔迹、<kbd>1</kbd>–<kbd>7</kbd> 翻页。<br>
-    终端：直接打字，<kbd>F1</kbd>–<kbd>F6</kbd> 切程序。密码转盘：拖动内圈。</p>
+    终端：直接打字（<kbd>HELP</kbd> 看命令），<kbd>F1</kbd>–<kbd>F6</kbd> 或 <kbd>[</kbd> <kbd>]</kbd> 切程序。密码转盘：拖动或 <kbd>←</kbd><kbd>→</kbd> 转内圈。</p>
+    <p class="hint">鼠标没被锁住时（比如某些内嵌浏览器）按住拖动也能看。刷新页面会自动回到原来的座位。</p>
     <h4>犯错</h4>
     <p>每次犯错（输错码、碰激光、被怪物抓到……）警报 +1。警报满了任务失败。时间到了也失败。</p>
     <button id="back" style="margin-top:16px">返回</button>
