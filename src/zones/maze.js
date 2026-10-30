@@ -10,20 +10,29 @@ const H = 2.5, T = 0.3;
 
 function listenerMesh() {
   const g = new THREE.Group();
-  const skin = new THREE.MeshStandardMaterial({ color: 0xc9c4b8, flatShading: true, roughness: 0.9 });
+  const skin = new THREE.MeshStandardMaterial({ color: 0xb9bcae, flatShading: true, roughness: 0.9 });
   const dark = new THREE.MeshBasicMaterial({ color: 0x0a0505 });
   const prof = [];
   for (let i = 0; i <= 9; i++) { const t = i / 9; prof.push(new THREE.Vector2(0.05 + 0.2 * Math.sin(Math.PI * (0.1 + t * 0.85)) ** 0.7, t * 1.6)); }
   const body = new THREE.Mesh(new THREE.LatheGeometry(prof, 7), skin);
   body.position.y = 0.55;
   g.add(body);
+  // long hunched neck, head hanging forward, no eyes — just two dents and a slit
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.5, 5), skin);
+  neck.position.set(0, 2.2, 0.08); neck.rotation.x = 0.55;
+  g.add(neck);
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 7, 5), skin);
   head.scale.set(1, 1.35, 1.1);
-  head.position.y = 2.25;
+  head.position.set(0, 2.38, 0.22);
   g.add(head);
-  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.03, 0.05), dark);
-  mouth.position.set(0, 2.18, 0.19);
-  g.add(mouth);
+  for (const sx of [-0.08, 0.08]) {
+    const dent = new THREE.Mesh(new THREE.SphereGeometry(0.045, 5, 4), dark);
+    dent.scale.set(1, 0.6, 0.4); dent.position.set(sx, 0.04, 0.17);
+    head.add(dent);
+  }
+  const mouth = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.025, 0.05), dark);
+  mouth.position.set(0, -0.1, 0.18);
+  head.add(mouth);
   const legs = [-1, 1].map((s) => {
     const p = new THREE.Group(); p.position.set(s * 0.1, 0.62, 0);
     const l = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.03, 0.62, 5), skin); l.position.y = -0.31; p.add(l);
@@ -203,7 +212,7 @@ export function buildMaze(world) {
       const hunt = c.mode === 'hunt';
       L.body.rotation.x = hunt ? 0.35 : 0.1;
       L.head.rotation.z = Math.sin(t * 7) * (hunt ? 0.25 : 0.08) + (Math.sin(t * 1.3) > 0.97 ? 0.6 : 0);
-      L.head.position.z = hunt ? 0.35 : 0.1;
+      L.head.position.z = hunt ? 0.36 : 0.22;
       L.mouth.scale.x = hunt ? 1.4 : 1;
       // sounds (positional)
       const pos = { x: lp.x, y: 2, z: lp.z };
