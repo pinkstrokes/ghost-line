@@ -12,7 +12,7 @@ GHOST 看得到机关的细节，但不知道怎么解；LINE 知道怎么解、
 | ![LINE 的 IR 监视器](docs/screens/line-ir-hall.png) | ![LINE 的热成像](docs/screens/line-thermal-spine.png) |
 | ![GHOST 在浓烟里读闸门](docs/screens/ghost-smoke.png) | ![示波器](docs/screens/line-scope.png) |
 | ![配线架](docs/screens/ghost-patch-frame.png) | ![蓝图 E-1](docs/screens/blueprint-E1.png) |
-| ![金库转盘](docs/screens/ghost-vault-dial.png) | |
+| ![金库转盘](docs/screens/ghost-vault-dial.png) | ![GHOST 在服务门前](docs/screens/ghost-gate.png) |
 
 ## 开始玩
 
