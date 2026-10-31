@@ -136,13 +136,33 @@ export function cableTray(B, x0, y, z0, x1, z1) {
 }
 
 // Wall-mounted CCTV camera prop (the GHOST can see these and wave at LINE).
-export function cameraProp(B, pos, look) {
+// mount: { ceil: y } drops a post from the ceiling; { wallZ: z } or { wallX: x } runs a bracket
+// arm back to that wall with a base plate. Without one the camera only has a short stub.
+export function cameraProp(B, pos, look, mount = {}) {
   const [x, y, z] = pos;
   const dx = look[0] - x, dz = look[2] - z;
   const ry = Math.atan2(dx, dz);
   const pitch = Math.atan2(look[1] - y, Math.hypot(dx, dz));
   const back = 0.18;
-  B.box(x - Math.sin(ry) * back, y + 0.12, z - Math.cos(ry) * back, 0.06, 0.24, 0.06, PAL.metalDark, { ry });
+  const bx = x - Math.sin(ry) * back, bz = z - Math.cos(ry) * back;
+  if (mount.ceil != null) {
+    const top = mount.ceil, h = top - (y + 0.04);
+    B.box(bx, y + 0.04 + h / 2, bz, 0.06, h, 0.06, PAL.metalDark);
+    B.box(bx, top - 0.015, bz, 0.18, 0.03, 0.18, PAL.metalDark);
+  } else if (mount.wallZ != null || mount.wallX != null) {
+    // short riser, then a horizontal arm to the wall and a plate on it
+    const ay = y + 0.16;
+    B.box(bx, y + 0.08, bz, 0.06, 0.16, 0.06, PAL.metalDark);
+    if (mount.wallZ != null) {
+      const len = Math.abs(bz - mount.wallZ);
+      B.box(bx, ay, (bz + mount.wallZ) / 2, 0.06, 0.06, len, PAL.metalDark);
+      B.box(bx, ay, mount.wallZ + Math.sign(bz - mount.wallZ) * 0.015, 0.2, 0.26, 0.03, PAL.metalDark);
+    } else {
+      const len = Math.abs(bx - mount.wallX);
+      B.box((bx + mount.wallX) / 2, ay, bz, len, 0.06, 0.06, PAL.metalDark);
+      B.box(mount.wallX + Math.sign(bx - mount.wallX) * 0.015, ay, bz, 0.03, 0.26, 0.2, PAL.metalDark);
+    }
+  } else B.box(bx, y + 0.12, bz, 0.06, 0.24, 0.06, PAL.metalDark, { ry });
   B.box(x, y, z, 0.16, 0.15, 0.34, 0xc7c3b4, { ry, rx: -pitch, bevel: 0.03 });
   B.box(x + Math.sin(ry) * 0.18, y + Math.sin(pitch) * 0.18, z + Math.cos(ry) * 0.18, 0.1, 0.1, 0.03, PAL.black, { ry, rx: -pitch });
   B.box(x + Math.sin(ry) * 0.12 + Math.cos(ry) * 0.05, y + 0.06, z + Math.cos(ry) * 0.12 - Math.sin(ry) * 0.05, 0.025, 0.025, 0.025, 0xff2020, { glow: true, ry });

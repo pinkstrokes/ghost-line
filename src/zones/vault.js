@@ -74,7 +74,7 @@ export function buildVault(world) {
   B.cyl(-11, 0.5, -65.2, 0.4, 1.0, 0x5a5a54, { sides: 8, collide: true });
   B.box(-11, 1.02, -65.2, 0.9, 0.04, 0.9, PAL.metalDark);
   fixture(B, -11, VR.h - 0.02, -65.2, { along: 'z', len: 1.0, intensity: 1.2, distance: 6, room: 'vault' });
-  cameraProp(B, CAMERAS[6].pos, CAMERAS[6].look);
+  cameraProp(B, CAMERAS[6].pos, CAMERAS[6].look, { ceil: 4 });
   B.decal(-8.02, 2.6, -65, -Math.PI / 2, 1.2, 0.5, 300, 120, drawSign(['EMERGENCY', 'HATCH H'], { stripe: '#b02a20' }));
   // model plate on the door frame (upper left)
   B.decal(DX - 1.6, 2.7, DZ + 0.31, 0, 0.62, 0.3, 300, 145, (c, w, h) => {

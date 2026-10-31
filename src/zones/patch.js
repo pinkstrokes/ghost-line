@@ -98,7 +98,7 @@ export function buildPatch(world) {
     for (let i = 0; i < 60; i++) { c.fillStyle = 'rgba(40,40,30,0.25)'; c.fillRect(Math.random() * w, Math.random() * hh, Math.random() * 40, 1.5); }
     for (const [x, y] of [[22, 22], [w - 22, 22], [22, hh - 22], [w - 22, hh - 22]]) { c.fillStyle = '#555'; c.beginPath(); c.arc(x, y, 7, 0, 7); c.fill(); }
   });
-  cameraProp(B, CAMERAS[3].pos, CAMERAS[3].look);
+  cameraProp(B, CAMERAS[3].pos, CAMERAS[3].look, { ceil: 4.2 });
   for (const cam of CAMERAS.filter((c) => c.id === 'CAM-05')) cameraProp(B, cam.pos, cam.look);
   B.finish(world.scene);
 

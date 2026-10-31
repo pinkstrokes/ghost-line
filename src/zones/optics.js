@@ -60,7 +60,7 @@ export function buildOptics(world) {
   B.decal(Zr.x1 - 0.012, 3.0, -56, -Math.PI / 2, 1.4, 0.6, 320, 140, drawSign(['SECURE STORE', '→ DOOR E'], { bg: '#38506a', fg: '#e2dccb' }));
   [[-30, -60], [-22, -60], [-30, -52], [-22, -52], [-26, -56]].forEach(([x, z], i) => fixture(B, x, Zr.h - 0.02, z, { along: 'x', len: 1.6, color: 0xd6e6ff, intensity: 2.6, distance: 11, room: 'optics', flicker: i === 1 ? 0.5 : 0, dead: i === 3 }));
   emergencyLamp(B, Zr.x1 - 0.1, 3.0, -54.5, -Math.PI / 2, { room: 'optics' });
-  cameraProp(B, CAMERAS[5].pos.map((v, k) => (k === 1 ? v + 0.05 : v)), CAMERAS[5].look);
+  cameraProp(B, CAMERAS[5].pos.map((v, k) => (k === 1 ? v + 0.05 : v)), CAMERAS[5].look, { ceil: 6 });
   makeDoor(world, B, { id: 'E', x: Zr.x1 + 0.15, z: -56, axis: 'z', w: 1.6, h: 2.4, mode: 'lift', color: 0x5a6670, label: 'E' });
   // passage to the vault antechamber
   room(B, { x0: Zr.x1 + 0.3, x1: -16.0, z0: -56.8, z1: -55.2, h: 2.6, skip: ['W', 'E'], lower: 0x3a3c3a, upper: 0x4a4b47, band: 1.0 });

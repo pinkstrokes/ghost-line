@@ -257,7 +257,7 @@ export function buildGate(world) {
     B.cyl(x, h / 2 + 0.6, z, 1.4 + Math.random(), h, 0x152019, { r2: 0, sides: 6, grad: 0.5 });
     B.cyl(x, 0.5, z, 0.18, 1.2, 0x231b14, { sides: 5 });
   }
-  cameraProp(B, CAMERAS[0].pos, CAMERAS[0].look);
+  cameraProp(B, CAMERAS[0].pos, CAMERAS[0].look, { wallZ: 0 });
   B.finish(world.scene);
   world.addInteractable({
     pos: new THREE.Vector3(-8.05, 1.55, 6.3), size: [0.8, 0.6, 0.3], zone: 'gate',

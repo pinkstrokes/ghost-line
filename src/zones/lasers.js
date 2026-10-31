@@ -67,7 +67,7 @@ export function buildLasers(world) {
   B.decal(x0 + 0.012, 1.7, -1.8, Math.PI / 2, 1.1, 0.8, 300, 220, drawSign(['WARNING', 'INFRA-RED', 'SECURITY GRID'], { stripe: '#b02a20' }));
   B.decal(x0 + 0.012, 1.6, -26.2, Math.PI / 2, 0.9, 0.45, 260, 130, drawSign(['SUBSTATION', '→'], { bg: '#38506a', fg: '#e2dccb' }));
   debris(B, -1.6, -9, 4, 0.5); papers(B, 1.2, -19.5, 5, 0.9); debris(B, 1.7, -23.6, 3, 0.3);
-  for (const cam of CAMERAS.filter((c) => c.zone === 'lasers')) cameraProp(B, cam.pos, cam.look);
+  for (const cam of CAMERAS.filter((c) => c.zone === 'lasers')) cameraProp(B, cam.pos, cam.look, { ceil: 3.2 });
   B.finish(world.scene);
 
   // ---- IR overlay: lane/row lines and row numbers drawn on the IR layer, so LINE can reference them

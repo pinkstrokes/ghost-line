@@ -7,7 +7,8 @@ const [seed, diff = 'operative'] = process.argv.slice(2);
 if (!seed) { console.log('usage: node scripts/answers.mjs SEED [difficulty]'); process.exit(1); }
 const m = generateMission(seed.toUpperCase(), diff);
 const LANE = 'ABCD';
-const row = (z) => String(Math.min(12, Math.max(1, Math.ceil(-z / 2)))).padStart(2, '0');
+const rowOf = (z) => (-z - 3) / 2; // row k spans z = -3-2(k-1) … -3-2k
+const row = (z) => { const r = rowOf(z); return Number.isInteger(r) ? `${String(r).padStart(2, "0")}/${String(r + 1).padStart(2, "0")} line` : String(Math.ceil(r)).padStart(2, "0"); };
 
 console.log(`\n=== ${m.seed} · ${diff.toUpperCase()} ===`);
 
@@ -16,7 +17,7 @@ console.log(`\nZ1 GATE   code ${G.code}   (lamp ${LAMP_COLORS[G.lamp]}, serial $
 
 console.log('\nZ2 LASERS (lanes A–D left→right looking in; row numbers on the walls)');
 for (const g of m.lasers.gates) {
-  const at = `row ~${row(g.z)}`;
+  const at = `row ${row(g.z)}`;
   if (g.type === 'wall') console.log(`  ${at}: wall — walk through lane ${LANE[g.gap]}`);
   if (g.type === 'wallHigh') console.log(`  ${at}: wall + chest beams — CROUCH through lane ${LANE[g.gap]}`);
   if (g.type === 'low') console.log(`  ${at}: ankle beam — JUMP (don't crouch)`);

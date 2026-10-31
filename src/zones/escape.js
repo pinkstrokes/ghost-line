@@ -99,7 +99,7 @@ export function buildEscape(world) {
     beacons.push(world.lightAnchors[world.lightAnchors.length - 1]);
   });
   beacons.forEach((b) => (b.on = false));
-  for (const cam of CAMERAS.filter((c) => c.zone === 'escape')) cameraProp(B, cam.pos, cam.look);
+  for (const cam of CAMERAS.filter((c) => c.zone === 'escape')) cameraProp(B, cam.pos, cam.look, { ceil: 3 });
   B.finish(world.scene);
 
   // hatch from the vault + lockdown bulkheads + lift
