@@ -155,3 +155,14 @@ input[type=range] { accent-color: var(--accent); }
 .ms:hover, .ms:focus-visible { background: none; color: var(--accent); outline: none; }
 .screen.menu .err { margin-top: 14px; }
 @media (max-width: 640px) { .screen.menu { padding-left: 20px; background: linear-gradient(90deg, rgba(2,3,4,0.85), rgba(2,3,4,0.55)); } }
+
+.sub-title { font-family: var(--stencil); font-size: clamp(40px, 6vw, 64px); letter-spacing: 4px; margin: 0 0 22px; color: var(--ink); text-shadow: 4px 4px 0 #000; }
+.solo-opts { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 22px; }
+.solo-opts label { display: flex; flex-direction: column; gap: 6px; font-size: 11px; letter-spacing: 3px; color: var(--dim); }
+.solo-opts select, .solo-opts input { background: rgba(0,0,0,0.35); border: none; border-bottom: 2px solid #4a4840; font-family: var(--stencil); font-size: 16px; letter-spacing: 2px; color: var(--ink); padding: 6px 4px; text-transform: uppercase; }
+.solo-opts input { width: 130px; color: var(--accent); }
+.solo-opts select:focus, .solo-opts input:focus { border-color: var(--accent); outline: none; }
+.solo-console { position: fixed; left: 50%; bottom: 70px; transform: translateX(-50%); z-index: 40; display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(4,16,8,0.92); border-left: 3px solid var(--accent); font-family: var(--mono); color: #7dff9a; }
+.solo-console input { width: min(520px, 70vw); background: none; border: none; color: #7dff9a; font-family: var(--mono); font-size: 16px; letter-spacing: 1px; text-transform: uppercase; }
+.solo-console input:focus { outline: none; }
+.solo-console input::placeholder { color: #2f7a43; }

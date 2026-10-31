@@ -65,13 +65,19 @@ export class LocalNet extends Bus {
   }
   send(msg) {
     if (msg.t === 'ping') return;
+    // the stand-in partner is always ready
+    const other = this.role === 'agent' ? 'handler' : 'agent';
+    if (msg.t === 'start' && this.room.state.players[other]) this.room.state.players[other].ready = true;
     this.room.handle(this.conns[this.role], msg);
     this.room.flush();
   }
   // act as the absent partner (debug / solo helpers)
   partner(msg) {
     const other = this.role === 'agent' ? 'handler' : 'agent';
-    if (!this.room.players[other]) this.room.join(other, 'PARTNER', this.conns[other]);
+    if (!this.room.players[other]) {
+      this.room.join(other, 'PARTNER', this.conns[other]);
+      this.room.state.players[other].ready = true; // never holds up a restart
+    }
     this.room.handle(this.conns[other], msg);
     this.room.flush();
   }

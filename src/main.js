@@ -2,6 +2,7 @@ import { Engine } from './engine/renderer.js';
 import { Input } from './engine/input.js';
 import { WsNet, LocalNet } from './net/net.js';
 import { Voice } from './net/voice.js';
+import { randomSeed } from '../shared/rng.js';
 Voice.loadConfig();
 import { Hud } from './ui/hud.js';
 import { sfx } from './audio/sfx.js';
@@ -93,25 +94,67 @@ function titleScreen(err = '') {
 }
 
 function soloScreen(name) {
-  html(`<div class="screen"><div class="card">
-    <h2 class="title" style="font-size:44px">SOLO</h2>
-    <p class="hint">Solo is for learning the controls and the spaces. The mission itself needs two people: alone you are missing half the information and half the controls.</p>
-    <div class="col" style="margin-top:16px">
-      <button class="big primary" id="agent">PLAY AS GHOST <small>go into the facility</small></button>
-      <button class="big" id="handler">PLAY AS LINE <small>sit in the van</small></button>
-      <label style="margin-top:8px">START AT</label>
-      <select id="zone"><option value="">FULL MISSION</option>${Object.entries(ZONE_TITLES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
-      <button id="back">BACK</button>
-    </div></div></div>`);
+  const seed = randomSeed();
+  html(`<div class="screen menu">
+    <h2 class="sub-title">SOLO</h2>
+    <nav class="mm">
+      <button class="mi lead" id="agent">PLAY AS GHOST</button>
+      <button class="mi" id="handler">PLAY AS LINE</button>
+    </nav>
+    <div class="solo-opts">
+      <label>START AT<select id="zone"><option value="">FULL MISSION</option>${Object.entries(ZONE_TITLES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></label>
+      <label>DIFFICULTY<select id="sdiff">${['recruit', 'operative', 'ghost'].map((d) => `<option value="${d}"${d === settings.difficulty ? ' selected' : ''}>${d.toUpperCase()}</option>`).join('')}</select></label>
+      <label>SEED<input id="sseed" maxlength="8" spellcheck="false" value="${seed}" /></label>
+    </div>
+    <div class="mm-small"><button class="ms" id="back">← BACK</button></div>
+  </div>`);
   const go = (role) => {
     const practice = $overlay.querySelector('#zone').value || null;
-    const net = new LocalNet({ difficulty: settings.difficulty, role, name });
+    const difficulty = $overlay.querySelector('#sdiff').value;
+    const sd = $overlay.querySelector('#sseed').value.trim().toUpperCase() || randomSeed();
+    settings.difficulty = difficulty; saveSettings();
+    const net = new LocalNet({ difficulty, role, name });
     attachNet(net);
-    setTimeout(() => net.send({ t: 'start', practice }), 30);
+    setTimeout(() => net.send({ t: 'start', practice, seed: sd, difficulty }), 30);
   };
   on('#agent', 'click', () => go('agent'));
   on('#handler', 'click', () => go('handler'));
   on('#back', 'click', () => titleScreen());
+}
+
+// Solo GHOST has nobody in the van: Enter opens a one-line LINE console (same commands as the
+// van terminal) so the whole mission can be played alone.
+function soloConsole(view, input) {
+  if (soloConsole.el) return;
+  const bar = document.createElement('div');
+  bar.className = 'solo-console';
+  bar.innerHTML = '<span>LINE&gt;</span><input spellcheck="false" placeholder="BREAKER · OPEN D3 · CLOSE D3 · L1 1234 · LIFT" />';
+  document.body.appendChild(bar);
+  const field = bar.querySelector('input');
+  const close = () => { bar.remove(); soloConsole.el = null; input.lock(); };
+  const run = (cmd) => {
+    const [c0, c1, c2] = cmd.toUpperCase().split(/\s+/);
+    const act = (a) => app.net.partner({ t: 'act', a });
+    if (c0 === 'BREAKER' || c0 === 'ENGAGE') { act({ k: 'breaker' }); return 'BREAKER ENGAGED'; }
+    if ((c0 === 'OPEN' || c0 === 'CLOSE') && /^D[1-6]$/.test(c1 || '')) { act({ k: 'damper', id: c1, open: c0 === 'OPEN' }); return `DAMPER ${c1} ${c0}`; }
+    if (c0 === 'OVERRIDE' && /^L[1-3]$/.test(c1 || '')) return run(`${c1} ${c2 || ''}`);
+    if (/^L[1-3]$/.test(c0) && /^\d{4}$/.test(c1 || '')) { act({ k: 'override', door: c0, code: c1 }); return `${c0}: SENT ${c1}`; }
+    if (c0 === 'LIFT') { act({ k: 'lift' }); return 'LIFT CALLED'; }
+    return null;
+  };
+  field.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+    if (e.key === 'Escape') { e.preventDefault(); close(); }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const v = field.value.trim();
+      if (v) { const r = run(v); hud.toast(r ? `LINE: ${r}` : 'LINE: BREAKER · OPEN D3 · CLOSE D3 · L1 1234 · LIFT', r ? '' : 'bad'); }
+      close();
+    }
+  });
+  input.unlock?.();
+  soloConsole.el = bar;
+  setTimeout(() => field.focus(), 0);
 }
 
 function howToScreen(back) {
@@ -336,7 +379,8 @@ async function startGame(key) {
   html('');
   const intro = document.createElement('div');
   intro.className = 'intro';
-  const talk = settings.ptt === 'hold' ? ' Hold V to talk.' : settings.ptt === 'open' ? ' Open mic is on.' : '';
+  const solo = app.net instanceof LocalNet;
+  const talk = solo ? (app.role === 'agent' ? ` Seed ${esc(s.seed)} · Enter = LINE console.` : ` Seed ${esc(s.seed)}.`) : settings.ptt === 'hold' ? ' Hold V to talk.' : settings.ptt === 'open' ? ' Open mic is on.' : '';
   intro.innerHTML = app.role === 'agent'
     ? `<div><small>KESTREL-9 · SECTOR B · 02:00</small><h2>GHOST</h2><p>LINE is watching from the van.${talk}</p></div>`
     : `<div><small>SURVEILLANCE VAN · 2 KM OUT · 02:00</small><h2>LINE</h2><p>GHOST is inside the fence.${talk}</p></div>`;
@@ -360,6 +404,7 @@ async function startGame(key) {
     const t = now / 1000;
     world.t = t;
     engine.renderer.shadowMap.needsUpdate = true;
+    if (app.net instanceof LocalNet && app.role === 'agent' && !view.inspect && input.hit('Enter') && app.state?.phase === 'playing') soloConsole(view, input);
     view.update(dt, t);
     world.update(dt, t);
     app.voice?.update(dt, input);
