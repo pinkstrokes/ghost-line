@@ -42,8 +42,8 @@ export class BlueprintView {
     if (this.canvas) return;
     this.layer.innerHTML = `<canvas></canvas>
       <div class="bp-tabs">${SHEETS.map((s, i) => `<button data-i="${i}">${i + 1} · ${s.id} ${s.name}</button>`).join('')}</div>
-      <div class="bp-tools"><button data-t="pencil">✎ 红笔 PENCIL (Shift)</button><button data-t="undo">撤销 UNDO (Z)</button><button data-t="clear">擦掉本页 CLEAR (X)</button><button data-t="fit">适配 FIT (F)</button><button data-t="close">关闭 CLOSE (Tab/Esc)</button>
-      <span class="small">拖动平移 · 滚轮缩放</span></div>`;
+      <div class="bp-tools"><button data-t="pencil">✎ PENCIL (Shift)</button><button data-t="undo">UNDO (Z)</button><button data-t="clear">CLEAR SHEET (X)</button><button data-t="fit">FIT (F)</button><button data-t="close">CLOSE (Tab/Esc)</button>
+      <span class="small">drag to pan · wheel to zoom</span></div>`;
     this.canvas = this.layer.querySelector('canvas');
     this.ctx = this.canvas.getContext('2d');
     this.layer.querySelectorAll('.bp-tabs button').forEach((b) => b.addEventListener('click', () => this.select(+b.dataset.i)));

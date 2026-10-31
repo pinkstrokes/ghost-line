@@ -48,7 +48,7 @@ export class HandlerView {
     ];
     sfx.ambience('van', true);
     this.lastObjective = null;
-    this.keyHelp = '<kbd>M</kbd> 监视器 <kbd>T</kbd> 终端 <kbd>Tab</kbd> 蓝图<br>点击设备凑近 · <kbd>右键</kbd>/<kbd>Esc</kbd> 坐回去<br>按住 <kbd>V</kbd> / <kbd>Option</kbd> 说话 · <kbd>F1</kbd> 再看一次';
+    this.keyHelp = '<kbd>M</kbd> monitors <kbd>T</kbd> terminal <kbd>Tab</kbd> blueprints<br>click a station to lean in · <kbd>Right-click</kbd>/<kbd>Esc</kbd> sit back<br>hold <kbd>V</kbd> / <kbd>Option</kbd> to talk · <kbd>F1</kbd> show again';
     hud.keys(this.keyHelp);
     this.keysT = 60;
   }
@@ -438,7 +438,7 @@ export class HandlerView {
   setFocus(id) {
     this.hud.paused(false);
     if (id === 'blueprint') { this.focus = 'blueprint'; this.input.unlock(); this.blueprint.open(); this.hud.crosshair(false); this.wantsCursor = true; return; }
-    if (id === 'radio') { this.hud.toast(this.settings.ptt === 'open' ? '常开麦中' : '按住 V 说话', ''); return; }
+    if (id === 'radio') { this.hud.toast(this.settings.ptt === 'open' ? 'Open mic is on' : 'Hold V to talk', ''); return; }
     const p = this.focusPose(id);
     if (!p) return;
     this.focus = id;
@@ -449,9 +449,9 @@ export class HandlerView {
     this.hud.crosshair(false);
     this.hud.prompt('');
     const hints = {
-      monitors: '1-0 选摄像头 · I 红外 · 方向键/拖动 云台 · 滚轮 变焦 · 点小屏换到主屏 · P 锁定小屏',
-      terminal: '直接打字 · ENTER 执行 · F1-F6 或 [ ] 或点标签 切程序',
-      cipher: '拖动 / ← → 转内圈',
+      monitors: '1-0 CAMERA · I INFRA-RED · ARROWS/DRAG PAN-TILT · WHEEL ZOOM · CLICK A SMALL SCREEN TO SWAP · P PIN',
+      terminal: 'TYPE COMMANDS · ENTER RUNS · F1-F6, [ ] OR CLICK A TAB TO SWITCH',
+      cipher: 'DRAG OR ← → TO TURN THE INNER DISC',
     };
     this.hud.setInspect(hints[id], true);
     if (id === 'terminal') {
@@ -488,7 +488,7 @@ export class HandlerView {
       for (const m of this.monitors) m.glitch = 0.8;
       this.world.avatar.alarm = 2;
     }
-    if (e.k === 'lockdown') { sfx.lockdown(); this.hud.toast('LOCKDOWN — 封锁了！打开终端 OVERRIDE', 'bad'); this.flashT = 1; }
+    if (e.k === 'lockdown') { sfx.lockdown(); this.hud.toast('LOCKDOWN — open OVERRIDE in the terminal', 'bad'); this.flashT = 1; }
     if (e.k === 'sfx' && e.name === 'granted') sfx.granted();
     if (e.k === 'spark') this.world.onSpark?.();
     if (e.k === 'sfx' && ['optics', 'power'].includes(e.name)) sfx.chime();
@@ -626,9 +626,9 @@ export class HandlerView {
       if (I.hit(`Digit${(k + 1) % 10}`) || I.hit(`Numpad${(k + 1) % 10}`)) { this.mainIdx = k; sfx.click(0.1); sfx.static(0.15, 0.04); }
     }
     if (I.hit('KeyI')) {
-      if (main.def.ir) { main.ir = !main.ir; sfx.click(0.12); } else this.hud.toast(`${main.def.id} 没有红外`, '');
+      if (main.def.ir) { main.ir = !main.ir; sfx.click(0.12); } else this.hud.toast(`${main.def.id} has no infra-red`, '');
     }
-    if (I.hit('KeyP')) { this.pinned = !this.pinned; this.hud.toast(this.pinned ? '小屏已锁定' : '小屏跟随目标', ''); }
+    if (I.hit('KeyP')) { this.pinned = !this.pinned; this.hud.toast(this.pinned ? 'Side screens pinned' : 'Side screens follow the objective', ''); }
     const pan = (I.down('ArrowLeft') ? 1 : 0) - (I.down('ArrowRight') ? 1 : 0);
     const tilt = (I.down('ArrowUp') ? 1 : 0) - (I.down('ArrowDown') ? 1 : 0);
     let z = 1;
@@ -641,7 +641,7 @@ export class HandlerView {
     let dPan = pan * dt * 0.8, dTilt = tilt * dt * 0.6;
     if (I.mouse.down && mon?.slot === 'main' && !I.mouse.clicked) { dPan += I.mouse.dx * 0.003; dTilt += I.mouse.dy * 0.003; }
     if ((dPan || dTilt || z !== 1) && !this.cctv.ptz(main, dPan, dTilt, z) && (pan || tilt || I.mouse.wheel)) {
-      if (!this.ptzWarned) { this.hud.toast(`${main.def.id} 是固定机位`, ''); this.ptzWarned = true; }
+      if (!this.ptzWarned) { this.hud.toast(`${main.def.id} is a fixed camera`, ''); this.ptzWarned = true; }
     }
     this.hud.cursor(mon && mon.slot !== 'main' ? 'pointer' : mon ? 'grab' : 'default');
     if (I.mouse.clicked && mon && mon.slot !== 'main') {

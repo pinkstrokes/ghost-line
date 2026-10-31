@@ -107,7 +107,7 @@ export function buildOptics(world) {
     head.rotation.y = ped.cur;
     world.addInteractable({
       pos: new THREE.Vector3(p.x, 1.1, p.z), size: [0.75, 1.0, 0.75], zone: 'optics',
-      label: () => `MIRROR ${m.letter}    [E] ⟳ 顺时针    [Q] ⟲ 逆时针`,
+      label: () => `MIRROR ${m.letter}    [E] ⟳ CLOCKWISE    [Q] ⟲ ANTICLOCKWISE`,
       rawPrompt: true,
       enabled: () => !world.state?.optics?.done,
       use: () => { world.act({ k: 'rotate', m: idx, d: -1 }); world.sfx?.ratchet(g.position); },

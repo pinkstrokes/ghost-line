@@ -224,7 +224,7 @@ export function buildPatch(world) {
     inspect: {
       camPos: new THREE.Vector3(FX - 1.6, 1.3, ZC), lookAt: new THREE.Vector3(FX, 1.24, ZC), fov: 60,
       buttons,
-      hint: '点插头拿起 · 点插孔插上 · 点挂钩放回',
+      hint: 'CLICK A PLUG TO PICK IT UP · CLICK A SOCKET TO PLUG IN · CLICK A HOOK TO HANG IT BACK',
       onExit: () => { held = null; },
       onHover: (btn, hit) => { cursorPoint = hit ? hit.point.clone() : null; },
       onButton: (btn) => {

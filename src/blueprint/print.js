@@ -26,9 +26,9 @@ bar.className = 'bar';
 bar.innerHTML = `<b>KESTREL-9 RECORD SET</b>
   <label>SEED <input id="seed" value="${seed || ''}" placeholder="from the lobby" style="width:110px;text-transform:uppercase"></label>
   <label>DIFFICULTY <select id="diff"><option value="recruit">RECRUIT</option><option value="operative">OPERATIVE</option><option value="ghost">GHOST</option></select></label>
-  <label><input type="checkbox" id="ink" ${q.get('ink') ? 'checked' : ''}> 省墨（白底）</label>
-  <button id="go">生成</button><button id="print">打印</button>
-  <span style="color:#888">种子在开局加载画面和结束画面里。蓝图随种子变化，旧种子的打印件不能用。</span>`;
+  <label><input type="checkbox" id="ink" ${q.get('ink') ? 'checked' : ''}> Ink saver (white paper)</label>
+  <button id="go">GENERATE</button><button id="print">PRINT</button>
+  <span style="color:#888">The seed is shown in the lobby and on the end screen. Blueprints change with every seed — an old printout won't match a new mission.</span>`;
 document.body.appendChild(bar);
 bar.querySelector('#diff').value = diff;
 bar.querySelector('#go').onclick = () => {

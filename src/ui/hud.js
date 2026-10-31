@@ -10,7 +10,7 @@ export class Hud {
       <div id="toasts"></div>
       <div id="inspect-hint"></div>
       <div id="radio"><span class="dot"></span><span class="lbl">RADIO</span></div>
-      <div id="clickToPlay">点击画面锁定鼠标 · 或按住拖动来看</div>
+      <div id="clickToPlay">CLICK TO CAPTURE THE MOUSE · OR CLICK-AND-DRAG TO LOOK</div>
       <div id="keys"></div>
     `;
     this.$ = (id) => root.querySelector('#' + id);

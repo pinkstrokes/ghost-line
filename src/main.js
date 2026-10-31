@@ -45,22 +45,22 @@ function titleScreen(err = '') {
   backdrop();
   html(`<div class="screen side"><div class="card">
     <h1 class="title">GHOST<br><span>LINE</span></h1>
-    <p class="subtitle">两人语音合作潜入 · 一个人进去，一个人在车里看着</p>
+    <p class="subtitle">Two-player voice co-op infiltration · one goes in, one watches from the van</p>
     <div class="col">
-      <label>代号 CALLSIGN</label>
+      <label>CALLSIGN</label>
       <input id="name" maxlength="16" placeholder="NAME" value="${esc(settings.name)}" />
-      <button class="primary big" id="host">建立行动 HOST <small>开房间，把代码告诉搭档</small></button>
+      <button class="primary big" id="host">HOST OPERATION <small>open a room, give your partner the code</small></button>
       <div class="row"><input id="code" maxlength="4" placeholder="CODE" style="width:140px;text-transform:uppercase" />
-      <button id="join" style="flex:1">加入行动 JOIN</button></div>
-      <button class="big" id="solo">单人熟悉 SOLO <small>一个人进去看看（另一个角色空着）</small></button>
-      <div class="row"><button id="howto" style="flex:1">玩法</button><button id="settings" style="flex:1">设置</button><button id="print" style="flex:1">打印蓝图</button></div>
+      <button id="join" style="flex:1">JOIN</button></div>
+      <button class="big" id="solo">SOLO WALKTHROUGH <small>look around alone — the other seat stays empty</small></button>
+      <div class="row"><button id="howto" style="flex:1">HOW TO PLAY</button><button id="settings" style="flex:1">SETTINGS</button><button id="print" style="flex:1">PRINT BLUEPRINTS</button></div>
       <div class="err">${esc(err)}</div>
     </div></div></div>`);
   const name = () => { settings.name = $overlay.querySelector('#name').value.trim().toUpperCase().slice(0, 16) || 'ANON'; saveSettings(); return settings.name; };
   on('#host', 'click', () => connect({ t: 'create', name: name(), difficulty: settings.difficulty }));
   on('#join', 'click', () => {
     const code = $overlay.querySelector('#code').value.trim().toUpperCase();
-    if (code.length !== 4) return titleScreen('行动代码是 4 个字母');
+    if (code.length !== 4) return titleScreen('An operation code is 4 letters.');
     connect({ t: 'join', code, name: name() });
   });
   on('#code', 'keydown', (e) => e.key === 'Enter' && $overlay.querySelector('#join').click());
@@ -73,13 +73,13 @@ function titleScreen(err = '') {
 function soloScreen(name) {
   html(`<div class="screen"><div class="card">
     <h2 class="title" style="font-size:44px">SOLO</h2>
-    <p class="hint">单人模式只用来熟悉场景和操作：任务需要两个人才能完成（一个人看不到另一半信息，也做不了另一半操作）。</p>
+    <p class="hint">Solo is for learning the controls and the spaces. The mission itself needs two people: alone you are missing half the information and half the controls.</p>
     <div class="col" style="margin-top:16px">
-      <button class="big primary" id="agent">我是 GHOST <small>进入设施</small></button>
-      <button class="big" id="handler">我是 LINE <small>坐在面包车里</small></button>
-      <label style="margin-top:8px">从哪里开始</label>
-      <select id="zone"><option value="">完整任务</option>${Object.entries(ZONE_TITLES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
-      <button id="back">返回</button>
+      <button class="big primary" id="agent">PLAY AS GHOST <small>go into the facility</small></button>
+      <button class="big" id="handler">PLAY AS LINE <small>sit in the van</small></button>
+      <label style="margin-top:8px">START AT</label>
+      <select id="zone"><option value="">FULL MISSION</option>${Object.entries(ZONE_TITLES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+      <button id="back">BACK</button>
     </div></div></div>`);
   const go = (role) => {
     const practice = $overlay.querySelector('#zone').value || null;
@@ -96,21 +96,21 @@ function howToScreen(back) {
   app.sub = true;
   html(`<div class="screen"><div class="card howto">
     <h2 class="title" style="font-size:40px">HOW TO PLAY</h2>
-    <p>一个人当 <b style="color:var(--ghost)">GHOST</b>：第一人称潜入废弃设施 KESTREL-9。另一个人当 <b style="color:var(--handler)">LINE</b>：坐在两公里外的监控面包车里，有设施的原始蓝图、偷接的监控摄像头和一台接进楼控系统的终端。</p>
-    <p>GHOST 看得到机关的细节但不知道怎么解；LINE 知道怎么解、看得到 GHOST 看不到的东西（红外激光、光束、热成像、传感器），但动不了。<b>每一关都必须说话才能过。</b></p>
-    <h4>说话</h4>
-    <p>按住 <kbd>V</kbd>（或 <kbd>Option</kbd>/<kbd>Alt</kbd>，LINE 在终端打字时用这个）用对讲机说话，设置里可以改成常开麦。坐在同一个房间也行，开 Discord 也行。</p>
+    <p>One of you is <b style="color:var(--ghost)">GHOST</b>, sneaking through the abandoned KESTREL-9 facility in first person. The other is <b style="color:var(--handler)">LINE</b>, sitting in a surveillance van two kilometres away with the original blueprints, tapped CCTV cameras and a terminal patched into the building's control system.</p>
+    <p>GHOST sees every detail of every lock but has no idea how to open it. LINE knows how, and sees what GHOST can't — infra-red lasers, beams, thermal images, motion sensors — but can't touch anything. <b>Every room needs both of you talking.</b></p>
+    <h4>TALKING</h4>
+    <p>Hold <kbd>V</kbd> to key the radio (LINE can also hold <kbd>Option</kbd>/<kbd>Alt</kbd>, which works while typing in the terminal). Open mic is in Settings. Sitting in the same room or using Discord works just as well.</p>
     <h4>GHOST</h4>
-    <p><kbd>WASD</kbd> 移动 <kbd>鼠标</kbd> 看 <kbd>Shift</kbd> 跑（有声音） <kbd>C</kbd> 蹲（没声音） <kbd>空格</kbd> 跳 <kbd>F</kbd> 手电 <kbd>E</kbd> 查看/交互（镜子：<kbd>E</kbd> 顺时针 <kbd>Q</kbd> 逆时针）<kbd>Tab</kbd> 抬手看表（时间、警报、目标）<kbd>F1</kbd> 按键提示</p>
+    <p><kbd>WASD</kbd> move · <kbd>Mouse</kbd> look · <kbd>Shift</kbd> run (loud) · <kbd>C</kbd> crouch (silent) · <kbd>Space</kbd> jump · <kbd>F</kbd> torch · <kbd>E</kbd> inspect / use (mirrors: <kbd>E</kbd> clockwise, <kbd>Q</kbd> anticlockwise) · <kbd>Tab</kbd> check watch (time, alerts, objective) · <kbd>F1</kbd> key help</p>
     <h4>LINE</h4>
-    <p><kbd>鼠标</kbd> 在车里转头，点击设备凑近操作，<kbd>右键</kbd>/<kbd>Esc</kbd> 退回座位。快捷键 <kbd>M</kbd> 监视器 <kbd>T</kbd> 终端 <kbd>Tab</kbd> 蓝图。<br>
-    监视器：<kbd>1</kbd>–<kbd>0</kbd> 选摄像头，<kbd>I</kbd> 红外/热成像，<kbd>方向键</kbd>/拖动 云台，<kbd>滚轮</kbd> 变焦。<br>
-    蓝图：拖动平移、滚轮缩放、<kbd>Shift</kbd>+拖动 用红笔画、<kbd>X</kbd> 擦掉这一页的笔迹、<kbd>1</kbd>–<kbd>7</kbd> 翻页。<br>
-    终端：直接打字（<kbd>HELP</kbd> 看命令），<kbd>F1</kbd>–<kbd>F6</kbd> 或 <kbd>[</kbd> <kbd>]</kbd> 切程序。密码转盘：拖动或 <kbd>←</kbd><kbd>→</kbd> 转内圈。</p>
-    <p class="hint">鼠标没被锁住时（比如某些内嵌浏览器）按住拖动也能看。刷新页面会自动回到原来的座位。</p>
-    <h4>犯错</h4>
-    <p>每次犯错（输错码、碰激光、被怪物抓到……）警报 +1。警报满了任务失败。时间到了也失败。</p>
-    <button id="back" style="margin-top:16px">返回</button>
+    <p><kbd>Mouse</kbd> look around the van, click a station to lean in, <kbd>Right-click</kbd>/<kbd>Esc</kbd> sit back. Shortcuts: <kbd>M</kbd> monitors · <kbd>T</kbd> terminal · <kbd>Tab</kbd> blueprints.<br>
+    Monitors: <kbd>1</kbd>–<kbd>0</kbd> pick a camera, <kbd>I</kbd> infra-red / thermal, <kbd>Arrows</kbd> or drag to pan/tilt, <kbd>Wheel</kbd> zoom.<br>
+    Blueprints: drag to pan, wheel to zoom, <kbd>Shift</kbd>+drag draws in red pencil, <kbd>X</kbd> clears this sheet, <kbd>1</kbd>–<kbd>7</kbd> change sheet.<br>
+    Terminal: just type (<kbd>HELP</kbd> lists commands), <kbd>F1</kbd>–<kbd>F6</kbd> or <kbd>[</kbd> <kbd>]</kbd> switch programs. Override rotor: drag or <kbd>←</kbd><kbd>→</kbd> to turn the inner disc.</p>
+    <p class="hint">If the mouse can't be captured (some embedded browsers), click-and-drag to look. Refreshing the page puts you back in your seat.</p>
+    <h4>MISTAKES</h4>
+    <p>Every mistake — a wrong code, a broken beam, getting caught — raises the alert level by one. Reach the limit and the facility locks down. Run out of time and it's over too.</p>
+    <button id="back" style="margin-top:16px">BACK</button>
   </div></div>`);
   on('#back', 'click', () => { app.sub = false; back(); });
 }
@@ -121,18 +121,18 @@ function settingsScreen(back) {
   html(`<div class="screen"><div class="card">
     <h2 class="title" style="font-size:40px">SETTINGS</h2>
     <div class="col" style="margin-top:14px">
-      <label>鼠标灵敏度 <span id="sv">${settings.sens.toFixed(2)}</span></label><input type="range" id="sens" min="0.2" max="3" step="0.05" value="${settings.sens}">
-      <label><input type="checkbox" id="invert" ${settings.invert ? 'checked' : ''}> 反转 Y 轴</label>
-      <label>视野 FOV <span id="fv">${settings.fov}</span></label><input type="range" id="fov" min="60" max="95" step="1" value="${settings.fov}">
-      <label>像素感</label>
-      <select id="pixel"><option value="270">粗 CHUNKY</option><option value="360">标准 NORMAL</option><option value="480">细 FINE</option><option value="720">高清 HD</option></select>
-      <label>总音量</label><input type="range" id="master" min="0" max="1" step="0.05" value="${settings.master}">
-      <label>对讲音量</label><input type="range" id="voice" min="0" max="2" step="0.05" value="${settings.voice}">
-      <label>对讲方式</label>
-      <select id="ptt"><option value="hold">按住 V 说话</option><option value="open">常开麦</option><option value="off">不用游戏内语音（Discord / 同一个房间）</option></select>
-      <label>难度（房主设置）</label>
-      <select id="diff">${Object.values(DIFFICULTY).map((d) => `<option value="${d.key}">${d.label} — ${d.time / 60} 分钟 · ${d.strikes} 次警报</option>`).join('')}</select>
-      <button id="back">保存并返回</button>
+      <label>MOUSE SENSITIVITY <span id="sv">${settings.sens.toFixed(2)}</span></label><input type="range" id="sens" min="0.2" max="3" step="0.05" value="${settings.sens}">
+      <label><input type="checkbox" id="invert" ${settings.invert ? 'checked' : ''}> INVERT Y</label>
+      <label>FIELD OF VIEW <span id="fv">${settings.fov}</span></label><input type="range" id="fov" min="60" max="95" step="1" value="${settings.fov}">
+      <label>PIXEL SIZE</label>
+      <select id="pixel"><option value="270">CHUNKY</option><option value="360">NORMAL</option><option value="480">FINE</option><option value="720">HD</option></select>
+      <label>MASTER VOLUME</label><input type="range" id="master" min="0" max="1" step="0.05" value="${settings.master}">
+      <label>RADIO VOLUME</label><input type="range" id="voice" min="0" max="2" step="0.05" value="${settings.voice}">
+      <label>RADIO MODE</label>
+      <select id="ptt"><option value="hold">Push to talk (hold V)</option><option value="open">Open mic</option><option value="off">No in-game voice (Discord / same room)</option></select>
+      <label>DIFFICULTY</label>
+      <select id="diff">${Object.values(DIFFICULTY).map((d) => `<option value="${d.key}">${d.label} — ${d.time / 60} min · ${d.strikes} alerts</option>`).join('')}</select>
+      <button id="back">SAVE &amp; BACK</button>
     </div></div></div>`);
   $overlay.querySelector('#pixel').value = String(settings.pixel);
   $overlay.querySelector('#ptt').value = settings.ptt;
@@ -165,7 +165,7 @@ async function connect(msg) {
   try {
     await net.connect(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
   } catch {
-    return titleScreen('连不上服务器。用 npm start 启动后打开它给的地址。');
+    return titleScreen('Can't reach the server. Start it with npm start and open the address it prints.');
   }
   attachNet(net);
   net.send(msg);
@@ -178,7 +178,7 @@ function attachNet(net) {
   app.net = net;
   sfx.init();
   net.on('error', (m) => { forgetSession(); titleScreen(m.m); });
-  net.on('closed', () => { if (app.net === net) titleScreen('连接断开了'); });
+  net.on('closed', () => { if (app.net === net) titleScreen('Connection lost.'); });
   net.on('joined', (m) => {
     app.role = m.role; app.code = m.code; app.resumePose = m.pose || null;
     if (!(net instanceof LocalNet)) try { sessionStorage.setItem('ghostline.session', JSON.stringify({ code: m.code, role: m.role })); } catch { /* */ }
@@ -190,8 +190,8 @@ function attachNet(net) {
     if (prev && m.s.phase === 'playing' && app.game) {
       const other = app.role === 'agent' ? 'handler' : 'agent';
       const was = prev.players[other]?.connected, now = m.s.players[other]?.connected;
-      if (was && !now) hud.toast(`${other === 'agent' ? 'GHOST' : 'LINE'} 掉线了 — 等 TA 用同一个代码重新加入`, 'bad');
-      if (!was && now && prev.players[other]) hud.toast(`${other === 'agent' ? 'GHOST' : 'LINE'} 重新连上了`, 'good');
+      if (was && !now) hud.toast(`${other === 'agent' ? 'GHOST' : 'LINE'} DROPPED — waiting for them to rejoin with the same code`, 'bad');
+      if (!was && now && prev.players[other]) hud.toast(`${other === 'agent' ? 'GHOST' : 'LINE'} IS BACK ON THE LINE`, 'good');
     }
     if (app.game) app.game.world.setState(m.s);
     const changed = !prev || prev.phase !== m.s.phase || prev.seed !== m.s.seed || prev.difficulty !== m.s.difficulty;
@@ -222,32 +222,32 @@ function lobbyScreen() {
     return `<div class="seat ${cls} ${me === role ? 'me' : ''}">
       <div class="ready ${p?.ready ? 'on' : ''}">${p ? (p.ready ? 'READY' : p.connected ? 'NOT READY' : 'OFFLINE') : 'EMPTY'}</div>
       <h3>${title}</h3><p>${sub}</p>
-      <div class="who">${p ? esc(p.name) + (me === role ? '  (你)' : '') : '<span class="small">等待搭档…</span>'}</div></div>`;
+      <div class="who">${p ? esc(p.name) + (me === role ? '  (YOU)' : '') : '<span class="small">waiting for partner…</span>'}</div></div>`;
   };
   const both = s.players.agent?.connected && s.players.handler?.connected;
-  const lan = location.hostname === 'localhost' ? '同一台电脑开第二个窗口也行；局域网另一台电脑用服务器启动时打印的 https 地址。' : `搭档打开 ${esc(location.origin)} 输入代码。`;
+  const lan = location.hostname === 'localhost' ? 'A second window on this machine works. From another computer on your network, use the https address the server printed.' : `Your partner opens ${esc(location.origin)} and enters this code.`;
   html(`<div class="screen"><div class="card">
-    <div class="row" style="justify-content:space-between"><div><label>行动代码 OPERATION CODE</label><div class="code">${esc(app.code)}</div></div>
+    <div class="row" style="justify-content:space-between"><div><label>OPERATION CODE</label><div class="code">${esc(app.code)}</div></div>
     <div class="col" style="align-items:flex-end"><span class="tag">${DIFFICULTY[s.difficulty]?.label}</span><span class="small">${DIFFICULTY[s.difficulty]?.time / 60} MIN · ${s.maxStrikes} ALERTS</span></div></div>
     <p class="hint">${lan}</p>
-    <p class="hint">任务种子 SEED <b style="color:var(--ink);letter-spacing:3px">${esc(s.seed)}</b> · LINE 想要纸质蓝图可以 <a href="/blueprint.html?seed=${encodeURIComponent(s.seed)}&diff=${s.difficulty}" target="_blank" style="color:var(--accent)">打印这一局的蓝图</a>（改难度会换种子内容）</p>
+    <p class="hint">MISSION SEED <b style="color:var(--ink);letter-spacing:3px">${esc(s.seed)}</b> · LINE can <a href="/blueprint.html?seed=${encodeURIComponent(s.seed)}&diff=${s.difficulty}" target="_blank" style="color:var(--accent)">print this mission's blueprints</a> (changing difficulty changes them)</p>
     <div class="seats">
-      ${seat('agent', 'GHOST', '潜入者。第一人称进设施，看得到机关细节，但不知道怎么解。', 'ghost')}
-      ${seat('handler', 'LINE', '接线员。坐在面包车里：蓝图、监控、终端。知道怎么解，但动不了。', 'line')}
+      ${seat('agent', 'GHOST', 'Infiltrator. Goes inside in first person. Sees every detail, knows none of the answers.', 'ghost')}
+      ${seat('handler', 'LINE', 'Handler. Sits in the van with blueprints, cameras and a terminal. Knows the answers, can\'t move.', 'line')}
     </div>
     <div class="row">
-      <button id="swap">换位置 SWAP</button>
+      <button id="swap">SWAP SEATS</button>
       <select id="diff">${Object.values(DIFFICULTY).map((d) => `<option value="${d.key}">${d.label}</option>`).join('')}</select>
-      <select id="practice"><option value="">完整任务 FULL MISSION</option>${Object.entries(ZONE_TITLES).map(([k, v]) => `<option value="${k}">练习 ${v}</option>`).join('')}</select>
+      <select id="practice"><option value="">FULL MISSION</option>${Object.entries(ZONE_TITLES).map(([k, v]) => `<option value="${k}">PRACTICE ${v}</option>`).join('')}</select>
     </div>
     <div class="row" style="margin-top:14px">
-      <button id="radio">无线电测试 RADIO CHECK</button><div class="meter"><i id="lvl"></i></div><span class="small" id="radioState"></span>
+      <button id="radio">RADIO CHECK</button><div class="meter"><i id="lvl"></i></div><span class="small" id="radioState"></span>
     </div>
     <div class="row" style="margin-top:18px">
-      <button id="ready" class="${s.players[me]?.ready ? '' : 'primary'}" style="flex:1">${s.players[me]?.ready ? '取消准备' : '准备 READY'}</button>
-      <button id="start" class="primary" style="flex:1" ${both && s.players.agent.ready && s.players.handler.ready ? '' : 'disabled'}>开始行动 START</button>
+      <button id="ready" class="${s.players[me]?.ready ? '' : 'primary'}" style="flex:1">${s.players[me]?.ready ? 'NOT READY' : 'READY'}</button>
+      <button id="start" class="primary" style="flex:1" ${both && s.players.agent.ready && s.players.handler.ready ? '' : 'disabled'}>START OPERATION</button>
     </div>
-    <div class="row" style="margin-top:10px"><button id="howto" style="flex:1">玩法</button><button id="settings" style="flex:1">设置</button><button id="leave" style="flex:1">离开</button></div>
+    <div class="row" style="margin-top:10px"><button id="howto" style="flex:1">HOW TO PLAY</button><button id="settings" style="flex:1">SETTINGS</button><button id="leave" style="flex:1">LEAVE</button></div>
   </div></div>`);
   $overlay.querySelector('#diff').value = s.difficulty;
   if (app.lastPractice) $overlay.querySelector('#practice').value = app.lastPractice;
@@ -262,7 +262,7 @@ function lobbyScreen() {
   on('#radio', 'click', async () => {
     ensureVoice();
     const ok = await app.voice.enable();
-    $overlay.querySelector('#radioState').textContent = ok ? (app.voice.connected ? '已接通 · 按住 V 说话' : '麦克风就绪 · 等搭档') : '没有麦克风权限（可以用 Discord）';
+    $overlay.querySelector('#radioState').textContent = ok ? (app.voice.connected ? 'Link up · hold V to talk' : 'Mic ready · waiting for partner') : 'No microphone access (Discord works too)';
   });
   if (app.voice) {
     app.voice.onLevel = (v) => { const el = document.getElementById('lvl'); if (el) el.style.width = `${Math.min(100, v * 300)}%`; };
@@ -311,8 +311,8 @@ async function startGame(key) {
   const intro = document.createElement('div');
   intro.className = 'intro';
   intro.innerHTML = app.role === 'agent'
-    ? `<div><small>KESTREL-9 · SECTOR B · 02:00</small><h2>GHOST</h2><p>LINE 在车里看着你。说话按住 V。</p></div>`
-    : `<div><small>SURVEILLANCE VAN · 2 KM OUT · 02:00</small><h2>LINE</h2><p>GHOST 已经到了围栏里面。说话按住 V。</p></div>`;
+    ? `<div><small>KESTREL-9 · SECTOR B · 02:00</small><h2>GHOST</h2><p>LINE is watching from the van. Hold V to talk.</p></div>`
+    : `<div><small>SURVEILLANCE VAN · 2 KM OUT · 02:00</small><h2>LINE</h2><p>GHOST is inside the fence. Hold V to talk.</p></div>`;
   document.body.appendChild(intro);
   setTimeout(() => intro.classList.add('out'), 2600);
   setTimeout(() => intro.remove(), 4200);
@@ -382,7 +382,7 @@ function endScreen() {
       <div><span class="small">ALERTS</span><b>${r.strikes ?? 0} / ${s.maxStrikes}</b></div>
       <div><span class="small">SEED</span><b>${esc(s.seed)}</b></div>
     </div>
-    <div class="row"><button class="primary" id="again" style="flex:1">再来一次 NEW MISSION</button><button id="leave" style="flex:1">离开</button></div>
+    <div class="row"><button class="primary" id="again" style="flex:1">NEW MISSION</button><button id="leave" style="flex:1">LEAVE</button></div>
   </div></div>`);
   on('#again', 'click', () => app.net.send({ t: 'lobby' }));
   on('#leave', 'click', () => { forgetSession(); app.net.close(); app.net = null; app.state = null; titleScreen(); });
@@ -395,15 +395,15 @@ document.addEventListener('keydown', (e) => {
 function pauseMenu() {
   if ($overlay.innerHTML) return;
   html(`<div class="screen"><div class="card">
-    <h2 class="title" style="font-size:40px">PAUSED</h2><p class="hint">游戏不会真的暂停——计时还在走。</p>
-    <div class="col"><button class="primary" id="resume">继续</button><button id="settings">设置</button><button id="howto">玩法</button><button id="abort">放弃任务（回到大厅）</button></div>
+    <h2 class="title" style="font-size:40px">PAUSED</h2><p class="hint">The game doesn't actually pause — the clock keeps running.</p>
+    <div class="col"><button class="primary" id="resume">RESUME</button><button id="settings">SETTINGS</button><button id="howto">HOW TO PLAY</button><button id="abort">ABORT MISSION (BACK TO LOBBY)</button></div>
   </div></div>`);
   on('#resume', 'click', () => { html(''); input.lock(); });
   const back = () => { html(''); pauseMenu(); };
   on('#settings', 'click', () => settingsScreen(back));
   on('#howto', 'click', () => howToScreen(back));
   const abort = on('#abort', 'click', () => {
-    if (!abort.dataset.armed) { abort.dataset.armed = '1'; abort.textContent = '再点一次确认（两个人都会回到大厅）'; return; }
+    if (!abort.dataset.armed) { abort.dataset.armed = '1'; abort.textContent = 'CLICK AGAIN TO CONFIRM — SENDS YOU BOTH TO THE LOBBY'; return; }
     html(''); app.net.send({ t: 'lobby' });
   });
 }

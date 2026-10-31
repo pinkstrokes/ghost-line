@@ -211,7 +211,7 @@ export function buildVault(world) {
     inspect: {
       camPos: new THREE.Vector3(DX - 0.02, DY + 0.12, DZ + 1.5), lookAt: new THREE.Vector3(DX - 0.02, DY + 0.08, DZ), fov: 50, res: 2.4,
       buttons: [bL, bR, bSet, handleHit],
-      hint: 'A/← 向左(数字变大)  D/→ 向右(数字变小)  按住连转  ·  SPACE = SET  ·  H = 拉把手',
+      hint: 'A/← LEFT (NUMBERS RISE) · D/→ RIGHT (NUMBERS FALL) · HOLD TO SPIN · SPACE = SET · H = PULL HANDLE',
       onButton: (b) => {
         const a = b.userData.button.act;
         if (a === 'L') turn(1); if (a === 'R') turn(-1);

@@ -7,38 +7,38 @@ export const fmtTime = (ms) => {
 export const OBJECTIVES = {
   gate: {
     short: 'GET INSIDE',
-    agent: '进入设施：把门禁铭牌上的符号、指示灯颜色和序列号告诉 LINE。',
-    handler: 'GHOST 在服务门前。让 GHOST 描述铭牌，用蓝图 A-2 算出门禁码。',
+    agent: 'Get through the service door. Describe the access plate to LINE: the three symbols, the lamp colour, the serial number.',
+    handler: 'GHOST is at the service door. Get them to describe the access plate, then work out the code from blueprint A-2.',
   },
   lasers: {
     short: 'IR GRID',
-    agent: '走廊里有你看不见的红外激光网。听 LINE 的：车道 A–D、墙上行号、蹲(C)、跳(空格)。',
-    handler: '激光只在 IR 画面里看得见：主屏切到 CAM-02 / CAM-03，按 I 开 IR，一步步指挥 GHOST。',
+    agent: 'The hall is wired with an infra-red grid you can\'t see. Follow LINE: lanes A–D on the floor, row numbers on the walls. C to crouch, Space to jump.',
+    handler: 'The lasers only show up in infra-red. Put CAM-03 / CAM-02 on the main monitor, press I, and talk GHOST through the grid.',
   },
   patch: {
     short: 'RESTORE POWER',
-    agent: '变电室没电。读出配线架编号，按 LINE 的指示把三根跳线插好。',
-    handler: '问清配线架编号，在蓝图 E-1 找对应那张图追线；插好后在终端 POWER 里合闸。',
+    agent: 'The substation is dead. Read LINE the frame number, then patch the three cables exactly as you\'re told.',
+    handler: 'Get the frame number from GHOST, find that frame on blueprint E-1 and trace it. Once GHOST has patched it, close the breaker in the terminal (POWER).',
   },
   maze: {
     short: 'UNDERCROFT',
-    agent: '地下管廊一片漆黑，里面有东西在听。读墙上的代号和风闸编号；蹲走没有声音。',
-    handler: '蓝图 M-1 是管廊图。终端 VENT 开关风闸（同时最多 2 个），SENSORS 看谁在动。',
+    agent: 'The tunnels are pitch dark and something in them is listening. Read out the junction codes and damper numbers. Crouching is silent.',
+    handler: 'Blueprint M-1 is the tunnel map. Open and close dampers in the terminal (VENT, two at a time). SENSORS shows what\'s moving — not who.',
   },
   optics: {
     short: 'ALIGN OPTICS',
-    agent: '光学实验室：镜台上有字母，按 E 顺时针转、Q 逆时针转。光束你看不见。',
-    handler: 'CAM-06 俯视 + IR 看光路。两个接收器都要被照到。对照蓝图 O-1 平面图认字母。',
+    agent: 'Optics lab. Each mirror has a letter. E turns it clockwise, Q anticlockwise. You can\'t see the beam.',
+    handler: 'CAM-06 in infra-red shows the beam from the ceiling. Light both receivers at once. Blueprint O-1 tells you which mirror is which.',
   },
   vault: {
     short: 'CRACK VAULT',
-    agent: '读出金库型号牌。按 LINE 说的方向慢慢转盘，报数；LINE 喊停就按 SET。',
-    handler: '蓝图 V-1 查型号：方向和真门签名。终端 ACOUSTIC 看示波器，听 GHOST 报数。',
+    agent: 'Read LINE the vault\'s model plate. Turn the dial the way LINE says, call out the numbers, press SET when told.',
+    handler: 'Look the model up on blueprint V-1: wheel directions and the true-gate signature. Watch ACOUSTIC in the terminal while GHOST calls numbers.',
   },
   escape: {
     short: 'ESCAPE',
-    agent: '封锁了！浓烟里你什么都看不清。读出闸门上的 4 个符号，跟着 LINE 走。',
-    handler: '热成像穿透烟雾：引导 GHOST 绕开坑和电缆。闸门符号用桌上的转盘解，终端 OVERRIDE 输入；最后 LIFT 叫电梯。',
+    agent: 'LOCKDOWN. You can barely see through the smoke. Read the four symbols on each bulkhead and follow LINE\'s directions.',
+    handler: 'Thermal sees through the smoke: steer GHOST around pits and live cables. Solve each bulkhead with the rotor on the desk, enter it in OVERRIDE, then call the LIFT.',
   },
 };
 

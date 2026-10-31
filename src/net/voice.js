@@ -39,7 +39,7 @@ export class Voice {
       try {
         this.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
       } catch {
-        this.hud?.toast('没有麦克风权限 — 可以用 Discord 或面对面说话', 'bad');
+        this.hud?.toast('No microphone access — use Discord or talk in person', 'bad');
         return false;
       }
       this.track = this.stream.getAudioTracks()[0];

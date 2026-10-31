@@ -42,7 +42,7 @@ export class AgentView {
       net.on('ev', (m) => this.onEvent(m.e)),
     ];
     this.lastObjective = null;
-    hud.keys('<kbd>WASD</kbd> 移动 <kbd>Shift</kbd> 跑 <kbd>C</kbd> 蹲 <kbd>空格</kbd> 跳<br><kbd>E</kbd> 查看/交互 <kbd>F</kbd> 手电 <kbd>Tab</kbd> 看表<br>按住 <kbd>V</kbd> 说话');
+    hud.keys('<kbd>WASD</kbd> move <kbd>Shift</kbd> run <kbd>C</kbd> crouch <kbd>Space</kbd> jump<br><kbd>E</kbd> inspect / use <kbd>F</kbd> torch <kbd>Tab</kbd> watch<br>hold <kbd>V</kbd> to talk');
     this.keysT = 45;
   }
 
@@ -163,7 +163,7 @@ export class AgentView {
     const I = this.input, s = this.world.state, now = this.net.serverNow();
     const playing = s?.phase === 'playing';
     if (this.keysT > 0 && (this.keysT -= dt) <= 0) this.hud.keys('');
-    if (I.hit('F1')) { this.keysT = 20; this.hud.keys('<kbd>WASD</kbd> 移动 <kbd>Shift</kbd> 跑 <kbd>C</kbd> 蹲 <kbd>空格</kbd> 跳<br><kbd>E</kbd> 查看/交互 <kbd>Q</kbd> 反向 <kbd>F</kbd> 手电 <kbd>Tab</kbd> 看表<br>按住 <kbd>V</kbd> 说话'); }
+    if (I.hit('F1')) { this.keysT = 20; this.hud.keys('<kbd>WASD</kbd> move <kbd>Shift</kbd> run <kbd>C</kbd> crouch <kbd>Space</kbd> jump<br><kbd>E</kbd> inspect / use <kbd>Q</kbd> reverse <kbd>F</kbd> torch <kbd>Tab</kbd> watch<br>hold <kbd>V</kbd> to talk'); }
     if (this.lastObjective !== s?.objective && playing) {
       this.lastObjective = s.objective;
       const o = OBJECTIVES[s.objective];
