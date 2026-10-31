@@ -1,76 +1,77 @@
 # GHOST LINE
 
-两人语音合作潜入游戏。一个人当 **GHOST**，第一人称潜入废弃秘密设施 KESTREL-9；另一个人当 **LINE**，第一人称坐在监控面包车里，手上有设施蓝图、偷接的 CCTV、一台接进楼控系统的终端和一个纸质密码转盘。
+A two-player voice co-op infiltration game. One player is **GHOST**, sneaking through the abandoned secret facility KESTREL-9 in first person. The other is **LINE**, sitting in a surveillance van (also in first person) with the facility blueprints, tapped CCTV cameras, a terminal patched into the building's control system and a paper cipher wheel.
 
-GHOST 看得到机关的细节，但不知道怎么解；LINE 知道怎么解、看得到 GHOST 看不到的东西（红外激光、光束、热成像、运动传感器），但动不了。每一关都必须说话。
+GHOST can see every detail of the security systems but doesn't know how to beat them. LINE knows how, and can see what GHOST can't (infra-red lasers, light beams, thermal imaging, motion sensors), but can't move. You have to talk your way through every zone.
 
-设计文档：[docs/DESIGN.md](docs/DESIGN.md)
+Design document (Chinese): [docs/DESIGN.md](docs/DESIGN.md)
 
 | | |
 |---|---|
-| ![title](docs/screens/title.png) | ![LINE 的面包车](docs/screens/line-van.png) |
-| ![LINE 的 IR 监视器](docs/screens/line-ir-hall.png) | ![LINE 的热成像](docs/screens/line-thermal-spine.png) |
-| ![GHOST 在浓烟里读闸门](docs/screens/ghost-smoke.png) | ![示波器](docs/screens/line-scope.png) |
-| ![配线架](docs/screens/ghost-patch-frame.png) | ![蓝图 E-1](docs/screens/blueprint-E1.png) |
-| ![金库转盘](docs/screens/ghost-vault-dial.png) | ![GHOST 在服务门前](docs/screens/ghost-gate.png) |
+| ![Title screen](docs/screens/title.png) | ![LINE's van](docs/screens/line-van.png) |
+| ![LINE's IR monitor](docs/screens/line-ir-hall.png) | ![LINE's thermal view](docs/screens/line-thermal-spine.png) |
+| ![GHOST reading a bulkhead in the smoke](docs/screens/ghost-smoke.png) | ![Acoustic scope](docs/screens/line-scope.png) |
+| ![Patch frame](docs/screens/ghost-patch-frame.png) | ![Blueprint E-1](docs/screens/blueprint-E1.png) |
+| ![Vault dial](docs/screens/ghost-vault-dial.png) | ![GHOST at the service door](docs/screens/ghost-gate.png) |
 
-## 在线版
+## Play online
 
-https://us.pinkstrokes.com （Hetzner，Caddy 反代 + 自建 coturn 语音中继，隔着互联网也能用游戏内语音）。改完代码 `scripts/deploy.sh` 重新部署。
+https://us.pinkstrokes.com (Hetzner, Caddy reverse proxy plus a self-hosted coturn relay, so in-game voice works across the internet). After changing the code, redeploy with `scripts/deploy.sh`.
 
-## 开始玩
+## Run it yourself
 
-需要 Node.js 20+。
+Requires Node.js 20+.
 
 ```bash
 npm install
 npm start
 ```
 
-启动后终端会打印两个地址：
+The server prints two addresses:
 
-- 本机：`http://localhost:8080`
-- 局域网另一台电脑：`https://<你的局域网IP>:8443`（自签证书，第一次打开要点"继续访问"。浏览器只在 https 下允许用麦克风）
+- This machine: `http://localhost:8080`
+- Another computer on your LAN: `https://<your-LAN-IP>:8443` (self-signed certificate: accept the warning once. Browsers only allow the microphone over https.)
 
-只需要一台电脑跑服务器（自签证书用系统自带的 `openssl` 生成；Windows 上没有 openssl 时 https 会关掉，局域网另一台电脑的游戏内语音就用不了，改用 Discord 即可，游戏本身照常联机）。
+Only one computer needs to run the server. The self-signed certificate is generated with the system `openssl`; on Windows without openssl, https is disabled, so in-game voice won't work for the LAN partner. Use Discord instead; the game itself still connects.
 
-游戏界面是英文的。一个人点 **HOST OPERATION**（建立行动），把 4 个字母的行动代码告诉搭档；另一个人输入代码点 **JOIN**（加入）。两人选好角色（GHOST / LINE，可以用 SWAP SEATS 互换），都点 **READY**，然后 **START OPERATION**。同一台电脑开两个浏览器窗口也能玩（调试或者一个人熟悉两边）。
+One player clicks **HOST OPERATION** and gives the 4-letter operation code to their partner, who types it in and clicks **JOIN**. Pick roles (GHOST / LINE; **SWAP SEATS** switches them), both click **READY**, then **START OPERATION**. Two browser windows on the same computer work too, for testing or to learn both sides.
 
-游戏内对讲：按住 **V** 说话（LINE 也可以按住 Option/Alt，在终端里打字时也能用）。SETTINGS 里可以改成常开麦（Open mic），或者关掉游戏内语音改用 Discord / 面对面。大厅里的 RADIO CHECK 可以先试麦。游戏内语音是 WebRTC（在线版带自建 TURN 中继，隔着互联网也能通）。注意：用游戏内语音时，Z4/Z7 的怪物听得到对讲机——这是玩法的一部分；用 Discord 就没有这层。
+In-game radio: hold **V** to talk (LINE can also hold Option/Alt, which keeps working while typing in the terminal). **SETTINGS** can switch to an open mic, or turn in-game voice off so you can use Discord or sit in the same room. **RADIO CHECK** in the lobby tests your mic. Voice is WebRTC (the online version has its own TURN relay). Note: with in-game voice, the creature in Z4/Z7 can hear the radio. That's part of the game; on Discord it can't.
 
-纸质蓝图：大厅里有 "print this mission's blueprints" 链接（`/blueprint.html?seed=…`，首页的 PRINT BLUEPRINTS 也能进），可以勾选省墨白底（Ink saver）。蓝图随种子变化，旧种子的打印件不能用。
+Paper blueprints: the lobby has a "print this mission's blueprints" link (`/blueprint.html?seed=…`, also reachable from **PRINT BLUEPRINTS** on the title screen), with an ink-saver option for white paper. Blueprints change with every seed, so an old printout won't match a new mission.
 
-## 操作
+## Controls
 
-**GHOST**：WASD 移动 · 鼠标看 · Shift 跑（很吵）· C 蹲（很轻）· 空格 跳 · F 手电 · E 查看/交互（镜子 E/Q 正反转）· Tab 抬手看表 · V 说话
+**GHOST**: WASD move · mouse look · Shift run (loud) · C crouch (quiet) · Space jump · F torch · E inspect / use (mirrors: E clockwise, Q anticlockwise) · Tab raise your watch · V talk
 
-**LINE**：鼠标转头 · 点击设备凑近 · 右键/Esc 坐回去 · M 监视器 · T 终端 · Tab 蓝图 · V 说话
-- 监视器：1–0 选摄像头，I 红外/热成像，方向键或拖动 云台，滚轮 变焦，点小屏换到主屏，P 锁定小屏
-- 蓝图：拖动平移，滚轮缩放，Shift+拖动 红笔，Z 撤销，X 擦掉本页，F 适配，1–7 翻页（7 张：00 封面 / A-1 总平面 / A-2 门禁 / E-1 配线架 / M-1 管廊 / O-1 光学 / V-1 金库）
-- 终端：直接打字（HELP 看命令），F1–F6 或 `[` `]` 或点标签切程序
-- 密码转盘：拖动或 ←/→ 转内圈
+**LINE**: mouse look · click a station to lean in · right-click / Esc sit back · M monitors · T terminal · Tab blueprints · V talk
+- Monitors: 1–0 pick a camera, I infra-red / thermal, arrows or drag to pan and tilt, wheel to zoom, click a side screen to swap it to the main one, P pins the side screens
+- Blueprints: drag to pan, wheel to zoom, Shift+drag red pencil, Z undo, X clear this sheet, F fit, 1–7 change sheet (00 cover / A-1 site / A-2 access / E-1 patch frame / M-1 undercroft / O-1 optics / V-1 vault)
+- Terminal: just type (HELP lists commands); F1–F6, `[` `]` or click a tab to switch programs
+- Cipher wheel: drag or ←/→ to turn the inner disc
 
-## 七关
+## The seven zones
 
 | | GHOST | LINE |
 |---|---|---|
-| Z1 门禁 | 描述铭牌上的 3 个符号和灯色；照岗亭里的 SOP 自己算第 4 位 | 蓝图 A-2 码表（注意作废的 REV A）报前 3 位 |
-| Z2 激光走廊 | 看不见激光，只能听指挥（车道 A–D、行号、蹲、跳） | IR 摄像头看光束和闪烁/扫动时机 |
-| Z3 变电室 | 读配线架编号，插三根跳线 | 蓝图 E-1 找对应编号的图追线；终端合闸 |
-| Z4 地下管廊 | 黑暗迷宫，读墙上代号，躲怪物（它听得到对讲机） | 蓝图 M-1 + 终端开关风闸（最多同时 2 个）+ 运动传感器 |
-| Z5 光学实验室 | 报出哪两个墙孔在闪灯，转镜子 | IR 俯视摄像头看光路，两个接收器同时照亮 |
-| Z6 金库 | 读型号，转到"发涩"的地方报数，SET | 蓝图 V-1 查方向和真门签名，终端示波器 |
-| Z7 封锁逃生 | 浓烟里几乎看不见，读闸门符号，身后有东西跟着 | 热成像引路、盯着怪物，转盘解闸门码，叫货梯 |
+| Z1 Gatehouse | Describes the 3 symbols and the lamp colour on the access plate; works out the 4th digit from the SOP sheet in the guard booth | Looks up the first 3 digits in the code table on A-2 (watch out for the void REV A) |
+| Z2 Laser Hall | Can't see the lasers; follows directions (lanes A–D, row numbers, crouch, jump) | IR cameras show the beams and their blink / sweep timing |
+| Z3 Substation | Reads the frame number, patches three jumper cables | Finds the matching diagram on E-1 and traces it; closes the breaker in the terminal |
+| Z4 Undercroft | Pitch-dark maze: reads junction codes, avoids the creature (it hears the radio) | Map M-1, opens/closes dampers in the terminal (max 2 at once), watches the motion sensors |
+| Z5 Optics Lab | Reports which two wall ports have a blinking lamp, turns mirrors | Ceiling IR camera shows the beam; light both receivers at once |
+| Z6 Vault | Reads the model plate, calls out numbers where the dial drags, presses SET | V-1 gives wheel directions and the true-gate signature; watches the acoustic scope |
+| Z7 Escape | Almost blind in the smoke, reads bulkhead symbols, something is following | Thermal cameras guide GHOST and track the creature; the cipher wheel opens each bulkhead; calls the lift |
 
-犯错 = 警报 +1（门禁第一次输错只警告），警报满了任务失败；时间到了也失败。每关有 PAR 时间，GHOST 的手表、LINE 的终端顶栏和结算界面都会显示领先/落后。三档难度：RECRUIT（新手）/ OPERATIVE（标准）/ GHOST（最难）。大厅可以选只练某一关（PRACTICE）。
+A mistake raises the alert level (the first wrong gate code is only a warning). Max out the alert level, or run out of time, and the mission fails. Each zone has a par time, shown as ahead/behind on GHOST's watch, LINE's terminal and the end screen. Three difficulties: RECRUIT / OPERATIVE / GHOST. The lobby can also start a single zone for practice.
 
-## 开发
+## Development
 
 ```bash
-npm run dev        # Vite (5233) + websocket 服务器 (8091)
-npm run verify     # 500 个种子：每关可解性 + 完整任务脚本跑通
-node scripts/e2e.mjs http://localhost:5233 /tmp/gl-e2e   # 两个无头浏览器从大厅打到撤离（需要先 npm run dev）
-node scripts/sheets.mjs SEED /tmp/sheets                  # 导出 7 张蓝图 PNG
+npm run dev        # Vite (5233) + websocket server (8091)
+npm run verify     # seeds: every zone is solvable + a full scripted mission runs through
+node scripts/e2e.mjs http://localhost:5233 /tmp/gl-e2e   # two headless browsers play from lobby to extraction (needs npm run dev)
+node scripts/sheets.mjs SEED /tmp/sheets                  # export the 7 blueprint sheets as PNGs (BASE=http://localhost:8080 to point elsewhere)
+node scripts/qa-new.mjs http://localhost:8080 /tmp/gl-qa  # screenshots of the newer mechanics
 ```
 
-结构：`shared/` 是服务器和浏览器共用的纯逻辑（任务生成、房间状态机、光路模拟）；`server/` 是静态文件 + websocket；`src/facility` 设施和 GHOST 视角；`src/zones` 七关；`src/van` 面包车、CCTV、终端、蓝图查看器；`src/blueprint` 蓝图绘制。所有模型、贴图、声音都是代码生成的，没有素材文件，也不调用任何外部 API。
+Layout: `shared/` is pure logic used by both server and browser (mission generation, the room state machine, the optics simulation); `server/` serves static files and the websocket; `src/facility` is the facility and GHOST's view; `src/zones` the seven zones; `src/van` the van, CCTV, terminal and blueprint viewer; `src/blueprint` draws the blueprints. Every model, texture and sound is generated in code: no asset files, no external APIs.
