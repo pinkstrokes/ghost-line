@@ -40,22 +40,44 @@ const html = (s) => { $overlay.innerHTML = s; };
 const on = (sel, ev, fn) => { const el = $overlay.querySelector(sel); if (el) el.addEventListener(ev, fn); return el; };
 
 // ---------------------------------------------------------------- title
+// The logo is drawn tiny and blown up with nearest-neighbour, like the game view itself:
+// hard 1-bit edges, a one-pixel drop shadow, no anti-aliasing.
+function drawLogo(cv) {
+  const lines = [['GHOST', '#e9e3d0'], ['LINE', '#ff6a1f']];
+  const size = 21, lh = 21, pad = 2;
+  const m = document.createElement('canvas').getContext('2d');
+  m.font = `900 ${size}px "Arial Black", Impact, sans-serif`;
+  const w = Math.ceil(Math.max(...lines.map(([t]) => m.measureText(t).width + t.length * 1.5))) + pad * 2 + 1;
+  cv.width = w; cv.height = lh * lines.length + pad * 2 + 1;
+  const c = cv.getContext('2d');
+  const ink = document.createElement('canvas'); ink.width = cv.width; ink.height = cv.height;
+  const k = ink.getContext('2d');
+  k.font = m.font; k.textBaseline = 'top';
+  if ("letterSpacing" in k) k.letterSpacing = "1.5px";
+  lines.forEach(([t, col], i) => { k.fillStyle = col; k.fillText(t, pad, pad + i * lh - 1); });
+  // threshold to hard pixels
+  const img = k.getImageData(0, 0, ink.width, ink.height), d = img.data;
+  for (let i = 3; i < d.length; i += 4) d[i] = d[i] > 110 ? 255 : 0;
+  k.putImageData(img, 0, 0);
+  c.globalAlpha = 0.85; c.filter = 'brightness(0)'; c.drawImage(ink, 1, 1); c.filter = 'none'; c.globalAlpha = 1;
+  c.drawImage(ink, 0, 0);
+}
+
 function titleScreen(err = '') {
   teardownGame();
   backdrop();
-  html(`<div class="screen side"><div class="card">
-    <h1 class="title">GHOST<br><span>LINE</span></h1>
-    <p class="subtitle">Two-player voice co-op infiltration · one goes in, one watches from the van</p>
-    <div class="col">
-      <label>CALLSIGN</label>
-      <input id="name" maxlength="16" placeholder="NAME" value="${esc(settings.name)}" />
-      <button class="primary big" id="host">HOST OPERATION <small>open a room, give your partner the code</small></button>
-      <div class="row"><input id="code" maxlength="4" placeholder="CODE" style="width:140px;text-transform:uppercase" />
-      <button id="join" style="flex:1">JOIN</button></div>
-      <button class="big" id="solo">SOLO WALKTHROUGH <small>look around alone — the other seat stays empty</small></button>
-      <div class="row"><button id="howto" style="flex:1">HOW TO PLAY</button><button id="settings" style="flex:1">SETTINGS</button><button id="print" style="flex:1">PRINT BLUEPRINTS</button></div>
-      <div class="err">${esc(err)}</div>
-    </div></div></div>`);
+  html(`<div class="screen menu">
+    <canvas id="logo" class="logo" aria-label="GHOST LINE"></canvas>
+    <div class="callsign"><span>CALLSIGN</span><input id="name" maxlength="16" placeholder="YOUR NAME" spellcheck="false" value="${esc(settings.name)}" /></div>
+    <nav class="mm">
+      <button class="mi lead" id="host">HOST OPERATION</button>
+      <div class="mi-join"><button class="mi" id="join">JOIN</button><input id="code" maxlength="4" placeholder="CODE" spellcheck="false" /></div>
+      <button class="mi" id="solo">SOLO WALKTHROUGH</button>
+      <div class="mm-small"><button class="ms" id="howto">HOW TO PLAY</button><button class="ms" id="settings">SETTINGS</button><button class="ms" id="print">PRINT BLUEPRINTS</button></div>
+    </nav>
+    <div class="err">${esc(err)}</div>
+  </div>`);
+  drawLogo($overlay.querySelector('#logo'));
   const name = () => { settings.name = $overlay.querySelector('#name').value.trim().toUpperCase().slice(0, 16) || 'ANON'; saveSettings(); return settings.name; };
   on('#host', 'click', () => connect({ t: 'create', name: name(), difficulty: settings.difficulty }));
   on('#join', 'click', () => {

@@ -127,3 +127,31 @@ label { font-size: 12px; color: var(--dim); letter-spacing: 2px; }
 .split b i.over { color: var(--bad); }
 
 input[type=range] { accent-color: var(--accent); }
+
+/* ---- title menu: no panel, it sits in the rain with the van */
+.screen.menu { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; padding-left: max(28px, 7vw);
+  background: linear-gradient(90deg, rgba(2,3,4,0.82) 0%, rgba(2,3,4,0.5) 32%, rgba(2,3,4,0) 58%); }
+.screen.menu > * { position: relative; z-index: 1; }
+.logo { width: min(500px, 78vw, 50vh); image-rendering: pixelated; image-rendering: crisp-edges; margin: 0 0 34px -6px; }
+.callsign { display: flex; align-items: baseline; gap: 14px; margin-bottom: 26px; font-family: var(--mono); }
+.callsign span { font-size: 11px; letter-spacing: 3px; color: var(--dim); }
+.callsign input { background: none; border: none; border-bottom: 2px solid #4a4840; padding: 4px 2px; width: 220px; font-family: var(--stencil); font-size: 18px; letter-spacing: 2px; color: var(--ink); text-transform: uppercase; }
+.callsign input::placeholder, .mi-join input::placeholder { color: #55534b; }
+.callsign input:focus, .mi-join input:focus { border-color: var(--accent); }
+.mm { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.mi { font-family: var(--stencil); font-size: clamp(22px, 2.4vw, 30px); letter-spacing: 1px; color: var(--ink); background: none; border: none; padding: 6px 12px 6px 30px; margin-left: -12px;
+  text-shadow: 3px 3px 0 #000; position: relative; transition: none; }
+.mi::before { content: ""; position: absolute; left: 10px; top: 50%; width: 10px; height: 10px; margin-top: -5px; background: var(--accent); transform: scale(0); }
+.mi:hover, .mi:focus-visible { background: var(--accent); color: #141210; text-shadow: none; outline: none; }
+.mi:hover::before, .mi:focus-visible::before { transform: scale(1); background: #141210; }
+.mi.lead { color: var(--accent); }
+.mi.lead::before { transform: scale(1); }
+.mi.lead:hover::before { background: #141210; }
+.mi-join { display: flex; align-items: center; gap: 4px; }
+.mi-join input { background: none; border: none; border-bottom: 2px solid #4a4840; width: 112px; padding: 2px 4px; font-family: var(--stencil); font-size: clamp(20px, 2.1vw, 26px); letter-spacing: 6px; color: var(--accent); text-transform: uppercase; }
+.mm-small { display: flex; gap: 6px; margin: 18px 0 0 -12px; flex-wrap: wrap; }
+.ms { font-family: var(--mono); font-size: 12px; letter-spacing: 2px; color: var(--dim); background: none; border: none; padding: 6px 12px; }
+.ms + .ms { border-left: none; }
+.ms:hover, .ms:focus-visible { background: none; color: var(--accent); outline: none; }
+.screen.menu .err { margin-top: 14px; }
+@media (max-width: 640px) { .screen.menu { padding-left: 20px; background: linear-gradient(90deg, rgba(2,3,4,0.85), rgba(2,3,4,0.55)); } }
