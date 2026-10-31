@@ -165,7 +165,7 @@ async function connect(msg) {
   try {
     await net.connect(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
   } catch {
-    return titleScreen('Can't reach the server. Start it with npm start and open the address it prints.');
+    return titleScreen('Cannot reach the server. Start it with npm start and open the address it prints.');
   }
   attachNet(net);
   net.send(msg);
