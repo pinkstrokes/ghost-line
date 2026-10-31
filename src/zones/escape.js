@@ -3,6 +3,7 @@ import { Builder, PAL, stencilText } from '../engine/kit.js';
 import { room, makeDoor, drawSign, emergencyLamp, cameraProp, debris, shelf, crate, barrel } from '../facility/props.js';
 import { SPINE, BULKHEADS, ZONES, CAMERAS } from '../../shared/layout.js';
 import { drawGlyph } from '../../shared/glyphs.js';
+import { listenerMesh, newListenerAnim, animateListener, copyListenerPose } from './maze.js';
 
 // Service spine, only reachable after the core is taken. Fire suppression fills it with smoke:
 // GHOST sees about a metre, the thermal cameras see everything. Pits, live cables, three
@@ -129,7 +130,7 @@ export function buildEscape(world) {
     const mat = new THREE.MeshBasicMaterial({ map: tex });
     const m = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.45), mat);
     // mount on the wall beside the door, facing the approach
-    if (b.axis === 'x') { m.position.set(b.x - 0.4, 1.6, -63.05); m.rotation.y = Math.PI; }
+    if (b.axis === 'x') { m.position.set(b.x - 0.8, 1.6, -63.05); m.rotation.y = Math.PI; }
     else { m.position.set(10.05, 1.6, b.z - 0.6); m.rotation.y = Math.PI / 2; }
     world.scene.add(m);
     const hotPlate = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.45), new THREE.MeshBasicMaterial({ color: 0xffffff }));
@@ -193,10 +194,24 @@ export function buildEscape(world) {
   smoke.layers.set(4); smoke.visible = false; smoke.frustumCulled = false;
   world.scene.add(smoke);
 
+  // the Listener, back for the climax: barely visible in the smoke, a cold black shape on thermal
+  const St = listenerMesh(), StHot = listenerMesh(true);
+  St.g.visible = StHot.g.visible = false;
+  world.scene.add(St.g, StHot.g);
+  let stAnim = newListenerAnim();
+
   let lastHaz = 0;
   return {
     update(dt, t, s) {
       const lock = !!s?.lockdown?.active;
+      const st = lock && s.lockdown.stalker;
+      St.g.visible = StHot.g.visible = !!st;
+      if (st) {
+        const lp = animateListener(St, stAnim, st, dt, t, world);
+        copyListenerPose(StHot, St);
+        const b = world.agentBody;
+        if (b) { const d = Math.hypot(b.x - lp.x, b.z - lp.z); world.flashFlicker = Math.max(world.flashFlicker || 0, d < 7 ? (7 - d) / 7 : 0); }
+      } else stAnim = newListenerAnim();
       beacons.forEach((b) => (b.on = lock));
       smoke.visible = lock;
       if (lock) {

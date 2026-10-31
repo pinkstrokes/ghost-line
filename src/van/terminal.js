@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { fmtTime, OBJECTIVES } from '../ui/text.js';
+import { fmtTime, OBJECTIVES, parDelta, fmtDelta } from '../ui/text.js';
 import { CAMERAS } from '../../shared/layout.js';
 import { SIG } from '../../shared/signatures.js';
 
@@ -54,16 +54,18 @@ export class Terminal {
 
   onEvent(e) {
     if (e.k === 'strike') this.addLog(`ALERT ${e.n} — ${e.reason}`, BAD);
+    if (e.k === 'gateWarn') this.addLog('ENTRY 7C — INVALID CODE (WARNING)', AMB);
+    if (e.k === 'stalker') this.addLog('SPINE THERMAL — UNKNOWN MOVER', BAD);
     if (e.k === 'acoustic') this.scopeEvents.push({ sig: e.sig, t: performance.now() / 1000, amp: 0.85 + Math.random() * 0.3 });
     if (e.k === 'deny' && e.what === 'damper') { this.say(`DAMPER ${e.id}: INSUFFICIENT POWER — CLOSE ANOTHER DAMPER FIRST`, BAD); this.sfx.denied(); }
-    if (e.k === 'sfx' && e.name === 'granted') this.addLog('SERVICE ENTRY 7C — ACCESS GRANTED');
-    if (e.k === 'sfx' && e.name === 'power') { this.addLog('SUBSTATION BREAKER CLOSED — POWER RESTORED'); this.say('BREAKER ENGAGED. LOAD NOMINAL. BULKHEAD C RELEASED.'); }
+    if (e.k === 'sfx' && e.name === 'granted') this.addLog('ENTRY 7C — ACCESS GRANTED');
+    if (e.k === 'sfx' && e.name === 'power') { this.addLog('BREAKER CLOSED — POWER ON'); this.say('BREAKER ENGAGED. LOAD NOMINAL. BULKHEAD C RELEASED.'); }
     if (e.k === 'spark') { this.addLog('BREAKER TRIP — PATCH FAULT', BAD); }
-    if (e.k === 'sfx' && e.name === 'optics') this.addLog('OPTICS RECEIVERS R1+R2 LOCKED — DOOR E RELEASED');
+    if (e.k === 'sfx' && e.name === 'optics') this.addLog('R1+R2 LOCKED — DOOR E OPEN');
     if (e.k === 'sfx' && e.name === 'vault') this.addLog('VAULT BOLTWORK RETRACTED');
-    if (e.k === 'lockdown') { this.addLog('*** LOCKDOWN PROTOCOL ENGAGED ***', BAD); this.prog = 'override'; this.say('LOCKDOWN. SPINE BULKHEADS SEALED. FIRE SUPPRESSION ACTIVE.', BAD); }
+    if (e.k === 'lockdown') { this.addLog('*** LOCKDOWN ***', BAD); this.prog = 'override'; this.say('LOCKDOWN. SPINE BULKHEADS SEALED. FIRE SUPPRESSION ACTIVE.', BAD); }
     if (e.k === 'sfx' && e.name === 'override') { this.addLog(`BULKHEAD ${e.id} OVERRIDE ACCEPTED`); this.say(`${e.id}: OVERRIDE ACCEPTED. BULKHEAD OPENING.`); }
-    if (e.k === 'sfx' && e.name === 'liftArrive') this.addLog('FREIGHT LIFT AT LEVEL -2. DOORS OPEN.');
+    if (e.k === 'sfx' && e.name === 'liftArrive') this.addLog('LIFT AT -2 — DOORS OPEN');
     this.dirty = true;
   }
 
@@ -122,12 +124,9 @@ export class Terminal {
     const prog = PROGRAMS.find((p) => p.name === c0 || p.id.toUpperCase() === c0);
     if (prog) { this.prog = prog.id; return; }
     if (c0 === 'HELP' || c0 === '?') {
-      ['VIEWS:  SYS POWER VENT SENSORS ACOUSTIC OVERRIDE   (F1-F6, [ ], OR CLICK TABS)',
-        'BREAKER            ENGAGE SUBSTATION BREAKER',
-        'OPEN D3 / CLOSE D3 SET A VENT DAMPER  (IN VENT VIEW: KEYS 1-6 TOGGLE)',
-        'L1 1234            SEND OVERRIDE CODE TO BULKHEAD L1',
-        'LIFT               CALL FREIGHT LIFT',
-        'CLEAR              CLEAR SCREEN'].forEach((l) => this.say(l));
+      ['VIEWS: F1-F6 / [ ] / CLICK TABS · BREAKER · LIFT · CLEAR',
+        'DAMPERS: OPEN D3 / CLOSE D3   (VENT VIEW: KEYS 1-6 TOGGLE)',
+        'BULKHEADS: L1 1234  SENDS A 4-DIGIT RESPONSE TO L1'].forEach((l) => this.say(l));
       return;
     }
     if (c0 === 'CLEAR' || c0 === 'CLS') { this.out = []; return; }
@@ -198,6 +197,8 @@ export class Terminal {
     this.text('KESTREL-9 BMS · NODE 04', 20, 28, G, 22);
     const remain = s ? (s.phase === 'playing' ? s.limit - (now - s.startAt) : s.limit) : 0;
     this.text(s?.practice ? 'PRACTICE' : `T-${fmtTime(remain)}`, W - 20, 28, remain < 120000 && !s?.practice ? BAD : G, 22, 'right');
+    const pd = parDelta(s, now);
+    if (pd != null) this.text(`PAR ${fmtDelta(pd)}`, W - 150, 28, pd > 0 ? AMB : GD, 18, 'right');
     if (s) {
       const n = s.strikes, max = s.maxStrikes;
       for (let i = 0; i < max; i++) { c.fillStyle = i < n ? BAD : GDD; c.fillRect(470 + i * 26, 12, 20, 16); }
@@ -233,7 +234,7 @@ export class Terminal {
       this.text(`${String((i + 1) % 10)}  ${cam.id}  ${cam.label}${cam.ir ? '  [IR]' : ''}${cam.ptz ? '  [PTZ]' : ''}`, 44, y + 104 + i * 24, G, 17);
     });
     this.text('EVENT LOG', 600, y + 76, GD, 18);
-    this.log.slice(-12).forEach((l, i) => this.text(l.text.slice(0, 34), 600, y + 104 + i * 24, l.color, 16));
+    this.log.slice(-12).forEach((l, i) => this.text(l.text.slice(0, 42), 600, y + 104 + i * 24, l.color, 16));
   }
 
   draw_power(s, now, y) {

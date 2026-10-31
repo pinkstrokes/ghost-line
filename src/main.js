@@ -7,7 +7,7 @@ import { Hud } from './ui/hud.js';
 import { sfx } from './audio/sfx.js';
 import { generateMission } from '../shared/mission.js';
 import { DIFFICULTY } from '../shared/layout.js';
-import { fmtTime, ZONE_TITLES } from './ui/text.js';
+import { fmtTime, ZONE_TITLES, parFor, fmtDelta } from './ui/text.js';
 import { TitleScene } from './ui/title-scene.js';
 
 const $overlay = document.getElementById('overlay');
@@ -126,8 +126,8 @@ function settingsScreen(back) {
       <label>FIELD OF VIEW <span id="fv">${settings.fov}</span></label><input type="range" id="fov" min="60" max="95" step="1" value="${settings.fov}">
       <label>PIXEL SIZE</label>
       <select id="pixel"><option value="270">CHUNKY</option><option value="360">NORMAL</option><option value="480">FINE</option><option value="720">HD</option></select>
-      <label>MASTER VOLUME</label><input type="range" id="master" min="0" max="1" step="0.05" value="${settings.master}">
-      <label>RADIO VOLUME</label><input type="range" id="voice" min="0" max="2" step="0.05" value="${settings.voice}">
+      <label>MASTER VOLUME <span id="mv">${Math.round(settings.master * 100)}%</span></label><input type="range" id="master" min="0" max="1" step="0.05" value="${settings.master}">
+      <label>RADIO VOLUME <span id="rv">${Math.round(settings.voice * 100)}%</span></label><input type="range" id="voice" min="0" max="2" step="0.05" value="${settings.voice}">
       <label>RADIO MODE</label>
       <select id="ptt"><option value="hold">Push to talk (hold V)</option><option value="open">Open mic</option><option value="off">No in-game voice (Discord / same room)</option></select>
       <label>DIFFICULTY</label>
@@ -139,6 +139,8 @@ function settingsScreen(back) {
   $overlay.querySelector('#diff').value = settings.difficulty;
   on('#sens', 'input', (e) => { settings.sens = +e.target.value; $overlay.querySelector('#sv').textContent = settings.sens.toFixed(2); });
   on('#fov', 'input', (e) => { settings.fov = +e.target.value; $overlay.querySelector('#fv').textContent = settings.fov; });
+  on('#master', 'input', (e) => { $overlay.querySelector('#mv').textContent = `${Math.round(e.target.value * 100)}%`; });
+  on('#voice', 'input', (e) => { $overlay.querySelector('#rv').textContent = `${Math.round(e.target.value * 100)}%`; });
   on('#back', 'click', () => {
     settings.invert = $overlay.querySelector('#invert').checked;
     settings.pixel = +$overlay.querySelector('#pixel').value;
@@ -151,6 +153,7 @@ function settingsScreen(back) {
     sfx.setVolume('master', settings.master);
     sfx.setVolume('voice', settings.voice);
     app.voice?.setMode(settings.ptt);
+    hud.openMic = settings.ptt === 'open'; hud.radio();
     if (app.net && app.state?.phase === 'lobby' && settings.difficulty !== prevDiff) app.net.send({ t: 'settings', difficulty: settings.difficulty });
     app.sub = false;
     back();
@@ -241,7 +244,7 @@ function lobbyScreen() {
       <select id="practice"><option value="">FULL MISSION</option>${Object.entries(ZONE_TITLES).map(([k, v]) => `<option value="${k}">PRACTICE ${v}</option>`).join('')}</select>
     </div>
     <div class="row" style="margin-top:14px">
-      <button id="radio">RADIO CHECK</button><div class="meter"><i id="lvl"></i></div><span class="small" id="radioState"></span>
+      <button id="radioCheck">RADIO CHECK</button><div class="meter"><i id="lvl"></i></div><span class="small" id="radioState"></span>
     </div>
     <div class="row" style="margin-top:18px">
       <button id="ready" class="${s.players[me]?.ready ? '' : 'primary'}" style="flex:1">${s.players[me]?.ready ? 'NOT READY' : 'READY'}</button>
@@ -259,10 +262,10 @@ function lobbyScreen() {
   on('#leave', 'click', () => { forgetSession(); app.net.close(); app.net = null; app.state = null; titleScreen(); });
   on('#howto', 'click', () => howToScreen(lobbyScreen));
   on('#settings', 'click', () => settingsScreen(lobbyScreen));
-  on('#radio', 'click', async () => {
+  on('#radioCheck', 'click', async () => {
     ensureVoice();
     const ok = await app.voice.enable();
-    $overlay.querySelector('#radioState').textContent = ok ? (app.voice.connected ? 'Link up · hold V to talk' : 'Mic ready · waiting for partner') : 'No microphone access (Discord works too)';
+    $overlay.querySelector('#radioState').textContent = ok ? (app.voice.connected ? (settings.ptt === 'open' ? 'Link up · open mic' : 'Link up · hold V to talk') : 'Mic ready · waiting for partner') : 'No microphone access (Discord works too)';
   });
   if (app.voice) {
     app.voice.onLevel = (v) => { const el = document.getElementById('lvl'); if (el) el.style.width = `${Math.min(100, v * 300)}%`; };
@@ -275,6 +278,7 @@ function ensureVoice() {
     if (app.net instanceof LocalNet) app.voice.local = true;
   }
   app.voice.role = app.role;
+  hud.pttLabel = app.role === 'handler' ? 'V / OPTION' : 'V';
   return app.voice;
 }
 
@@ -303,21 +307,23 @@ async function startGame(key) {
   const mod = app.role === 'agent' ? await import('./facility/agent.js') : await import('./van/handler.js');
   if (token !== app.startToken) return;
   const view = app.role === 'agent'
-    ? new mod.AgentView({ engine, world, input, net: app.net, hud, settings })
+    ? new mod.AgentView({ engine, world, input, net: app.net, hud, settings, voice: app.voice })
     : new mod.HandlerView({ engine, world, input, net: app.net, hud, settings, voice: app.voice });
   app.game = { world, view };
   app.voice.attach(view);
   html('');
   const intro = document.createElement('div');
   intro.className = 'intro';
+  const talk = settings.ptt === 'hold' ? ' Hold V to talk.' : settings.ptt === 'open' ? ' Open mic is on.' : '';
   intro.innerHTML = app.role === 'agent'
-    ? `<div><small>KESTREL-9 · SECTOR B · 02:00</small><h2>GHOST</h2><p>LINE is watching from the van. Hold V to talk.</p></div>`
-    : `<div><small>SURVEILLANCE VAN · 2 KM OUT · 02:00</small><h2>LINE</h2><p>GHOST is inside the fence. Hold V to talk.</p></div>`;
+    ? `<div><small>KESTREL-9 · SECTOR B · 02:00</small><h2>GHOST</h2><p>LINE is watching from the van.${talk}</p></div>`
+    : `<div><small>SURVEILLANCE VAN · 2 KM OUT · 02:00</small><h2>LINE</h2><p>GHOST is inside the fence.${talk}</p></div>`;
   document.body.appendChild(intro);
   setTimeout(() => intro.classList.add('out'), 2600);
   setTimeout(() => intro.remove(), 4200);
   hud.show(true);
   hud.crosshair(true);
+  hud.openMic = settings.ptt === 'open';
   hud.radio(settings.ptt === 'off' ? 'off' : '');
   input.onLockChange = (locked) => { hud.paused(!locked && !view.inspect && !view.focus && app.state?.phase === 'playing' && !view.wantsCursor && !$overlay.innerHTML); };
   canvas.onclick = () => { if (!view.inspect && !view.wantsCursor) input.lock(); };
@@ -347,6 +353,7 @@ function teardownGame() {
   app.game.view.dispose?.();
   app.game.world.dispose?.();
   app.game = null;
+  hud.setInspect('', false); hud.prompt(''); hud.keys('');
   hud.show(false);
   input.unlock();
   document.body.style.cursor = 'default';
@@ -370,7 +377,8 @@ function endScreen() {
     const t = s.splits?.[k];
     if (t == null) return `<div class="split ${k === r.reached ? 'here' : 'none'}"><span>${v}</span><b>${k === r.reached && !r.win ? '✕' : '—'}</b></div>`;
     const d = t - prev; prev = t;
-    return `<div class="split"><span>${v}</span><b>${fmtTime(d)}</b></div>`;
+    const vs = t - parFor(k, s);
+    return `<div class="split"><span>${v}</span><b>${fmtTime(d)} <i class="${vs > 0 ? 'over' : 'under'}">${fmtDelta(vs)}</i></b></div>`;
   }).join('');
   html(`<div class="screen"><div class="card">
     <h2 class="result ${r.win ? 'win' : 'lose'}">${r.win ? 'EXTRACTED' : 'COMPROMISED'}</h2>

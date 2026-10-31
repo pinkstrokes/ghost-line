@@ -3,13 +3,16 @@ import { LAYER } from './world.js';
 import { PAL } from '../engine/kit.js';
 import { AGENT_SPAWN, zoneOf, ZONES, practiceSpawn } from '../../shared/layout.js';
 import { sfx } from '../audio/sfx.js';
-import { fmtTime, OBJECTIVES } from '../ui/text.js';
+import { fmtTime, OBJECTIVES, parDelta, fmtDelta } from '../ui/text.js';
 
 const EYE = 1.62, EYE_CROUCH = 1.0, H_STAND = 1.72, H_CROUCH = 1.05, R = 0.27;
 
+const DOWN_T = 1.3; // seconds GHOST lies on the floor after a strike before fading back
+
 export class AgentView {
-  constructor({ engine, world, input, net, hud, settings }) {
-    this.engine = engine; this.world = world; this.input = input; this.net = net; this.hud = hud; this.settings = settings;
+  constructor({ engine, world, input, net, hud, settings, voice }) {
+    this.engine = engine; this.world = world; this.input = input; this.net = net; this.hud = hud; this.settings = settings; this.voice = voice;
+    this.radioHold = 0; this.txHold = 0;
     this.cam = new THREE.PerspectiveCamera(72, 1, 0.05, 220);
     this.cam.layers.set(LAYER.WORLD); this.cam.layers.enable(LAYER.FP); this.cam.layers.enable(LAYER.SMOKE);
     world.scene.add(this.cam);
@@ -95,38 +98,49 @@ export class AgentView {
     if (s?.lockdown?.active) remain = Math.min(remain, s.escapeEnd - now);
     if (s?.practice) remain = s.lockdown?.active ? s.escapeEnd - now : 0;
     c.fillStyle = s?.lockdown?.active ? ((now / 400) % 2 < 1 ? '#ff6a50' : '#7a2a20') : '#9dff9a';
-    c.fillText(s?.practice && !s.lockdown?.active ? 'PRACT' : fmtTime(remain), 128, 70);
+    c.fillText(s?.practice && !s.lockdown?.active ? '--:--' : fmtTime(remain), 128, 64);
     const max = s?.maxStrikes || 5, n = s?.strikes || 0;
     const w = Math.min(34, 200 / max);
     for (let i = 0; i < max; i++) {
       c.fillStyle = i < n ? '#ff5a3a' : '#20321f';
-      c.fillRect(128 - (max * w) / 2 + i * w + 3, 96, w - 6, 18);
+      c.fillRect(128 - (max * w) / 2 + i * w + 3, 82, w - 6, 16);
     }
     c.fillStyle = '#6fb36d'; c.font = '700 20px "Courier New", monospace';
-    c.fillText(OBJECTIVES[s?.objective]?.short || '', 128, 142);
+    c.fillText(OBJECTIVES[s?.objective]?.short || '', 128, 120);
+    const pd = parDelta(s, now);
+    if (pd != null) { c.fillStyle = pd > 0 ? '#ff7a5a' : '#6fb36d'; c.font = '700 17px "Courier New", monospace'; c.fillText(`PAR ${fmtDelta(pd)}`, 128, 144); }
     this.watchTex.needsUpdate = true;
   }
 
   onEvent(e) {
     if (e.k === 'teleport') {
-      this.fadeTarget = 0;
+      // knocked back by a strike (laser, pit, the Listener): go down where LINE can watch it, then fade
+      const knocked = performance.now() - (this.strikeAt || 0) < 400;
+      if (knocked) { this.downT = DOWN_T; this.downDir = Math.random() < 0.5 ? -1 : 1; setTimeout(() => (this.fadeTarget = 0), (DOWN_T - 0.45) * 1000); }
+      else this.fadeTarget = 0;
       this.world.agentBody.teleporting = true;
       setTimeout(() => {
         this.pos.set(e.x, 0, e.z);
         this.vel.set(0, 0, 0);
         if (e.yaw != null) { this.yaw = e.yaw; this.pitch = 0; }
         this.fadeTarget = 1;
+        this.downT = 0;
         setTimeout(() => (this.world.agentBody.teleporting = false), 1200);
-      }, 420);
+      }, knocked ? DOWN_T * 1000 : 420);
       if (this.inspect) this.exitInspect();
     }
-    if (e.k === 'strike') { this.flashT = 1; this.shake = 0.5; sfx.strike(); this.hud.toast(`ALERT ${e.n} — ${e.reason}`, 'bad'); }
+    if (e.k === 'gateWarn') { sfx.denied(); this.hud.toast('CODE INVALID — ONE MORE WRONG CODE TRIPS THE ALARM', 'bad'); }
+    if (e.k === 'strike') { this.strikeAt = performance.now(); this.flashT = 1; this.shake = 0.5; sfx.strike(); this.hud.toast(`ALERT ${e.n} — ${e.reason}`, 'bad'); }
     if (e.k === 'spark') { if (this.world.onSpark) this.world.onSpark(); else sfx.spark({ x: 6.6, y: 1.4, z: -33 }); }
     if (e.k === 'sfx' && e.name === 'granted') sfx.granted();
     if (e.k === 'sfx' && e.name === 'power') sfx.powerOn({ x: 0, y: 2, z: -33 });
     if (e.k === 'sfx' && e.name === 'clunk') sfx.clunk(this.pos);
-    if (e.k === 'sfx' && e.name === 'caught') { sfx.groan(this.pos); this.shake = 1; }
-    if (e.k === 'dial') sfx.tick(this.pos);
+    if (e.k === 'sfx' && e.name === 'caught') { sfx.groan(this.pos); sfx.static(0.5, 0.18); this.shake = 1; this.scareT = 0.6; this.hud.scare(); }
+    if (e.k === 'stalker') this.hud.toast('SOMETHING FOLLOWED YOU OUT OF THE UNDERCROFT', 'bad');
+    if (e.k === 'dial') {
+      sfx.tick(this.pos);
+      if (e.drag) { sfx.ratchet(this.pos); this.shake = Math.max(this.shake, 0.12); this.world.vaultDragAt = performance.now(); }
+    }
     if (e.k === 'sfx' && e.name === 'optics') sfx.chime();
     if (e.k === 'sfx' && e.name === 'vault') sfx.bolts({ x: -11, y: 1.4, z: -62 });
     if (e.k === 'sfx' && e.name === 'override') { sfx.granted(); this.hud.toast(`${e.id} OPEN`, 'good'); }
@@ -163,7 +177,7 @@ export class AgentView {
     const I = this.input, s = this.world.state, now = this.net.serverNow();
     const playing = s?.phase === 'playing';
     if (this.keysT > 0 && (this.keysT -= dt) <= 0) this.hud.keys('');
-    if (I.hit('F1')) { this.keysT = 20; this.hud.keys('<kbd>WASD</kbd> move <kbd>Shift</kbd> run <kbd>C</kbd> crouch <kbd>Space</kbd> jump<br><kbd>E</kbd> inspect / use <kbd>Q</kbd> reverse <kbd>F</kbd> torch <kbd>Tab</kbd> watch<br>hold <kbd>V</kbd> to talk'); }
+    if (I.hit('F1')) { this.keysT = 20; this.hud.keys('<kbd>WASD</kbd> move <kbd>Shift</kbd> run <kbd>C</kbd> crouch <kbd>Space</kbd> jump<br><kbd>E</kbd> inspect / use <kbd>Q</kbd> turn mirror back <kbd>F</kbd> torch <kbd>Tab</kbd> watch<br>hold <kbd>V</kbd> to talk'); }
     if (this.lastObjective !== s?.objective && playing) {
       this.lastObjective = s.objective;
       const o = OBJECTIVES[s.objective];
@@ -241,13 +255,21 @@ export class AgentView {
       this.cam.rotation.set(this.pitch, this.yaw, 0, 'YXZ');
       this.cam.fov = this.settings.fov;
     }
+    if (this.downT > 0) {
+      // crumple: drop to the floor and roll onto one side
+      this.downT = Math.max(0, this.downT - dt);
+      const k = Math.min(1, (1 - this.downT / DOWN_T) * 2.2), e = k * k * (3 - 2 * k);
+      this.cam.position.y = Math.max(0.28, this.cam.position.y - e * 1.25);
+      this.cam.rotation.z += this.downDir * e * 1.15;
+      this.cam.rotation.x -= e * 0.35;
+    }
     this.cam.aspect = this.engine.width / this.engine.height;
     this.cam.updateProjectionMatrix();
     this.cam.updateMatrixWorld();
     // hands
     this.hands.visible = !this.inspect;
     this.right.position.set(0.25 + bobX * 0.5, -0.24 + bobY * 0.6 - this.watchUp * 0.08, -0.42);
-    this.left.position.set(-0.3 + this.watchUp * 0.18, -0.34 + this.watchUp * 0.16 + bobY * 0.5, -0.42 + this.watchUp * 0.1);
+    this.left.position.set(-0.3 + this.watchUp * 0.18, -0.34 + this.watchUp * 0.24 + bobY * 0.5, -0.42 + this.watchUp * 0.1);
     this.left.rotation.set(this.watchUp * 0.9, this.watchUp * 0.25, this.watchUp * -0.5);
     if (((t * 10) | 0) % 2 === 0) this.drawWatch(s, now);
     // flashlight
@@ -265,16 +287,22 @@ export class AgentView {
     // ---- interaction
     if (this.inspect) this.updateInspect(dt);
     else this.updateInteract();
+    // radio noise: LINE's voice comes out of GHOST's walkie speaker, and GHOST talking is noise too.
+    // Held briefly so gaps between words still count (the Listener hears speech, not syllables).
+    const v = this.voice;
+    this.radioHold = v && v.inLevel > 0.06 ? 0.6 : Math.max(0, this.radioHold - dt);
+    this.txHold = v && v.tx && v.level > 0.05 ? 0.6 : Math.max(0, this.txHold - dt);
     // pose
     this.poseAcc += dt;
     if (this.poseAcc > 0.05) {
       this.poseAcc = 0;
-      const flags = (this.crouching ? 1 : 0) | (this.flashOn ? 2 : 0) | (B.sprint ? 4 : 0) | (B.moving ? 8 : 0) | (this.grounded ? 0 : 16);
+      const flags = (this.crouching ? 1 : 0) | (this.flashOn ? 2 : 0) | (B.sprint ? 4 : 0) | (B.moving ? 8 : 0) | (this.grounded ? 0 : 16)
+        | (this.radioHold > 0 ? 32 : 0) | (this.txHold > 0 ? 64 : 0) | (this.downT > 0 ? 128 : 0);
       const r3 = (v) => Math.round(v * 1000) / 1000;
       this.net.send({ t: 'pose', p: [r3(this.pos.x), r3(this.pos.y), r3(this.pos.z), r3(this.yaw), r3(this.pitch), flags] });
     }
     // local avatar (casts the shadow you'd expect, and keeps the world consistent)
-    this.world.avatar.update(dt, t, [this.pos.x, this.pos.y, this.pos.z, this.yaw, this.pitch, this.crouching ? 1 : 0]);
+    this.world.avatar.update(dt, t, [this.pos.x, this.pos.y, this.pos.z, this.yaw, this.pitch, (this.crouching ? 1 : 0) | (this.downT > 0 ? 128 : 0)]);
     // audio listener
     sfx.setListener(this.cam.position, fdir);
     const zone = zoneOf(this.pos.x, this.pos.z);
@@ -289,7 +317,8 @@ export class AgentView {
     const P = this.engine.post.uniforms;
     P.uFade.value = this.fade;
     P.uFlash.value = this.flashT * 0.8 + (s?.lockdown?.active ? (Math.sin(t * 5) * 0.5 + 0.5) * 0.18 : 0);
-    P.uStatic.value = 0;
+    this.scareT = Math.max(0, (this.scareT || 0) - dt);
+    P.uStatic.value = this.scareT;
   }
 
   updateInteract() {

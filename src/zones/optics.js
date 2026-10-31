@@ -6,7 +6,7 @@ import { traceBeams } from '../../shared/optics-sim.js';
 import { IR_BEAM_MAT } from '../facility/world.js';
 
 // Optics lab: six pedestals on a 1 m lattice. The beam is infra-red (IR layer only).
-// Every wall port looks the same to GHOST; LINE sees which ones are live on CAM-06 IR.
+// Every wall port looks the same on CAM-06; only GHOST can see which two blink (live receivers).
 
 const BEAM_Y = 1.2;
 
@@ -36,6 +36,14 @@ export function buildOptics(world) {
     const { x } = latticePos(i, 0);
     B.box(x, BEAM_Y, Zr.z0 + 0.06, 0.16, 0.16, 0.12, 0x6a6e6a, { grad: 0 }).box(x, BEAM_Y, Zr.z0 + 0.125, 0.07, 0.07, 0.01, portMat, { grad: 0 });
   }
+  // stencilled port numbers: N from the west, W/E from the north (matches sheet O-1)
+  const portNo = (t) => (ctx, w, h) => { ctx.fillStyle = '#6a6e6a'; ctx.fillRect(0, 0, w, h); stencilText(ctx, t, w / 2, h / 2 + 1, h * 0.72, '#e6dfc6'); };
+  for (let j = 0; j < OPTICS.n; j++) {
+    const { z } = latticePos(0, j);
+    B.decal(Zr.x0 + 0.013, BEAM_Y + 0.2, z, Math.PI / 2, 0.2, 0.09, 64, 28, portNo(`W${j + 1}`));
+    B.decal(Zr.x1 - 0.013, BEAM_Y + 0.2, z, -Math.PI / 2, 0.2, 0.09, 64, 28, portNo(`E${j + 1}`));
+  }
+  for (let i = 0; i < OPTICS.n; i++) B.decal(latticePos(i, 0).x, BEAM_Y + 0.2, Zr.z0 + 0.013, 0, 0.2, 0.09, 64, 28, portNo(`N${i + 1}`));
   // obstacles: pillars
   for (const [i, j] of O.obstacles) {
     const p = latticePos(i, j);
@@ -116,20 +124,22 @@ export function buildOptics(world) {
     return ped;
   });
 
-  // receiver lamps (only light up when solved, so GHOST gets no partial feedback)
+  // receiver standby lamps: GHOST sees which ports are live (amber blink), LINE doesn't —
+  // they're cold on IR and hooded against the ceiling camera. They only turn green when solved,
+  // so GHOST still gets no partial feedback.
+  const hoodMat = new THREE.MeshStandardMaterial({ color: 0x6a6e6a, flatShading: true });
   const recLamps = O.receivers.map((rc) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.05), new THREE.MeshBasicMaterial({ color: 0x101010 }));
-    if (rc.side === 'N') { const p = latticePos(rc.idx, 0); m.position.set(p.x, BEAM_Y + 0.14, Zr.z0 + 0.13); }
-    else { const p = latticePos(0, rc.idx); m.position.set(Zr.x1 - 0.13, BEAM_Y + 0.14, p.z); }
-    world.scene.add(m);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.04), new THREE.MeshBasicMaterial({ color: 0x101010 }));
+    const hood = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.02, 0.12), hoodMat);
+    if (rc.side === 'N') { const p = latticePos(rc.idx, 0); m.position.set(p.x, BEAM_Y - 0.15, Zr.z0 + 0.14); hood.position.set(p.x, BEAM_Y - 0.1, Zr.z0 + 0.16); }
+    else { const p = latticePos(0, rc.idx); m.position.set(Zr.x1 - 0.14, BEAM_Y - 0.15, p.z); hood.position.set(Zr.x1 - 0.16, BEAM_Y - 0.1, p.z); hood.rotation.y = Math.PI / 2; }
+    world.scene.add(m, hood);
     return m;
   });
-  // hot spots for IR: emitter + receivers glow on the HOT layer
-  const hotMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-  const hot = (x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), hotMat); m.position.set(x, y, z); m.layers.set(6); world.scene.add(m); return m; };
+  // hot spot for IR: only the emitter glows; every receiver port looks like a dummy to C06
   const ej = latticePos(0, O.emitterJ);
-  hot(Zr.x0 + 0.1, BEAM_Y, ej.z);
-  const recHot = O.receivers.map((rc) => (rc.side === 'N' ? hot(latticePos(rc.idx, 0).x, BEAM_Y, Zr.z0 + 0.1) : hot(Zr.x1 - 0.1, BEAM_Y, latticePos(0, rc.idx).z)));
+  const emHot = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  emHot.position.set(Zr.x0 + 0.1, BEAM_Y, ej.z); emHot.layers.set(6); world.scene.add(emHot);
 
   // ---- beam (IR layer)
   const MAX = 64;
@@ -181,7 +191,6 @@ export function buildOptics(world) {
     for (let i = n; i < MAX; i++) { quads[i].visible = false; pos.fill(0, i * 6, i * 6 + 6); }
     lg.attributes.position.needsUpdate = true;
     lg.setDrawRange(0, n * 2);
-    tr.lit.forEach((l, i) => (recHot[i].scale.setScalar(l ? 2.2 : 1)));
   };
   setBeam(O.init);
 
@@ -199,7 +208,9 @@ export function buildOptics(world) {
       });
       setBeam(orient);
       const done = s?.optics?.done;
-      recLamps.forEach((m) => m.material.color.setHex(done ? 0x40ff70 : 0x101010));
+      // R1 blinks once, R2 twice, per 1.4 s cycle
+      const ph = t % 1.4;
+      recLamps.forEach((m, i) => m.material.color.setHex(done ? 0x40ff70 : (ph < 0.18 || (i === 1 && ph > 0.32 && ph < 0.5)) ? 0xffa020 : 0x1a1208));
     },
   };
 }

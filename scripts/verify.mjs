@@ -205,7 +205,10 @@ function fullRun(seed, diff) {
   room.handle(A, { t: 'ready', v: true }); room.handle(H, { t: 'ready', v: true }); room.handle(A, { t: 'start' });
   if (s().phase !== 'playing') fail('REG', 'start refused with both ready');
   const act = (who, a) => room.handle(who, { t: 'act', a });
-  for (const k of ['1', '2', '3', '4', 'ENT', 'ENT', 'ENT']) act(A, { k: 'key', v: k === '1' && room.mission.gate.code[0] === '1' ? '9' : k });
+  const wrong = (ents) => { for (const k of ['1', '2', '3', '4', ...ents]) act(A, { k: 'key', v: k === '1' && room.mission.gate.code[0] === '1' ? '9' : k }); };
+  wrong(['ENT']);
+  if (s().strikes !== 0) fail('REG', 'first wrong gate code was not a free warning');
+  wrong(['ENT', 'ENT', 'ENT']);
   if (s().strikes !== 1) fail('REG', `repeated ENT gave ${s().strikes} strikes`);
   act(A, { k: 'handle' }); act(A, { k: 'handle' });
   if (s().strikes !== 2) fail('REG', `double HANDLE gave ${s().strikes - 1} strikes`);
@@ -214,6 +217,31 @@ function fullRun(seed, diff) {
   if (s().strikes !== 4) fail('REG', 'pit right after a cable shock was swallowed');
   room.handle(A, { t: 'lobby' });
   if (s().players.agent.ready || s().players.handler.ready) fail('REG', 'ready flags survived back-to-lobby');
+}
+
+// the spine Listener (Z7): silent GHOST is safe at range, the radio draws it in, a catch is a strike + checkpoint
+{
+  let clock = 9_000_000;
+  const sent = [];
+  const room = new Room({ code: 'STK', seed: 'STK1', now: () => clock, send: (_, m) => sent.push(m) });
+  const A = { id: 'a' }, H = { id: 'h' };
+  room.join('agent', 'A', A); room.join('handler', 'H', H);
+  room.handle(A, { t: 'ready', v: true }); room.handle(H, { t: 'ready', v: true }); room.handle(A, { t: 'start' });
+  const s = () => room.state;
+  room.triggerLockdown(true);
+  const pose = (x, z, flags) => room.handle(A, { t: 'pose', p: [x, 0, z, 0, 0, flags] });
+  const tick = (n) => { for (let i = 0; i < n; i++) { clock += 100; pose(gx, -65, gf); room.tick(); } };
+  let gx = 1, gf = 0; // standing still at bulkhead L1 (u = 9), 9 m from where it comes out
+  tick(520); // operative: it comes out 45 s after the lockdown
+  if (!s().lockdown.stalker) fail('STK', 'spine Listener never appeared');
+  if (s().strikes) fail('STK', 'caught a silent, still GHOST within seconds of appearing');
+  gf = 32; // LINE talking loudly on the radio
+  const before = s().lockdown.stalker.x;
+  tick(150);
+  if (!s().strikes && s().lockdown.stalker.x <= before) fail('STK', 'the radio did not draw the Listener in');
+  tick(250);
+  if (!s().strikes) fail('STK', 'loud radio at close range never got GHOST caught');
+  if (!sent.some((m) => m.t === 'ev' && m.e.k === 'teleport')) fail('STK', 'catch did not send GHOST back to the checkpoint');
 }
 
 const t0 = Date.now();

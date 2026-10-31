@@ -8,10 +8,12 @@ import { MAZE, WALL, cellCenter, CAMERAS } from '../../shared/layout.js';
 
 const H = 2.5, T = 0.3;
 
-function listenerMesh() {
+// hot = the thermal-camera twin: it's cold-blooded, so it renders as a black silhouette
+// (COLDMARK layer) — easy to tell apart from GHOST's white body heat
+export function listenerMesh(hot = false) {
   const g = new THREE.Group();
-  const skin = new THREE.MeshStandardMaterial({ color: 0xb9bcae, flatShading: true, roughness: 0.9 });
-  const dark = new THREE.MeshBasicMaterial({ color: 0x0a0505 });
+  const skin = hot ? new THREE.MeshBasicMaterial({ color: 0xffffff }) : new THREE.MeshStandardMaterial({ color: 0xb9bcae, flatShading: true, roughness: 0.9 });
+  const dark = hot ? skin : new THREE.MeshBasicMaterial({ color: 0x0a0505 });
   const prof = [];
   for (let i = 0; i <= 9; i++) { const t = i / 9; prof.push(new THREE.Vector2(0.05 + 0.2 * Math.sin(Math.PI * (0.1 + t * 0.85)) ** 0.7, t * 1.6)); }
   const body = new THREE.Mesh(new THREE.LatheGeometry(prof, 7), skin);
@@ -44,8 +46,54 @@ function listenerMesh() {
     const hand = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.18, 0.04), skin); hand.position.y = -1.3; p.add(hand);
     g.add(p); return p;
   });
-  g.traverse((o) => { if (o.isMesh) { o.castShadow = true; } });
+  g.traverse((o) => { if (o.isMesh) { if (hot) o.layers.set(8); else o.castShadow = true; } });
   return { g, head, legs, arms, mouth, body };
+}
+
+// Shared walk cycle + positional sounds for any Listener driven by server state c {x, z, yaw, mode}.
+// lv is per-instance animation state; returns the smoothed position.
+export function newListenerAnim() {
+  return { p: new THREE.Vector3(), first: true, yaw: 0, phase: 0, clickT: 2, groanT: 5, stepT: 0, mode: 'idle' };
+}
+export function animateListener(L, lv, c, dt, t, world) {
+  const target = new THREE.Vector3(c.x, 0, c.z);
+  if (lv.first) { lv.p.copy(target); lv.yaw = c.yaw || 0; lv.first = false; }
+  const prev = lv.p.clone();
+  lv.p.lerp(target, Math.min(1, dt * 8));
+  const sp = prev.distanceTo(lv.p) / Math.max(dt, 1e-3);
+  L.g.position.copy(lv.p);
+  let dy = c.yaw - lv.yaw;
+  while (dy > Math.PI) dy -= Math.PI * 2;
+  while (dy < -Math.PI) dy += Math.PI * 2;
+  lv.yaw += dy * Math.min(1, dt * 6);
+  L.g.rotation.y = lv.yaw;
+  lv.phase += dt * (1.5 + sp * 3);
+  const sw = Math.sin(lv.phase) * Math.min(1, sp);
+  L.legs[0].rotation.x = sw * 0.6; L.legs[1].rotation.x = -sw * 0.6;
+  L.arms[0].rotation.x = -sw * 0.25 + 0.05; L.arms[1].rotation.x = sw * 0.25 + 0.05;
+  L.arms[0].rotation.z = -0.08; L.arms[1].rotation.z = 0.08;
+  const hunt = c.mode === 'hunt';
+  L.body.rotation.x = hunt ? 0.35 : 0.1;
+  L.head.rotation.z = Math.sin(t * 7) * (hunt ? 0.25 : 0.08) + (Math.sin(t * 1.3) > 0.97 ? 0.6 : 0);
+  L.head.position.z = hunt ? 0.36 : 0.22;
+  L.mouth.scale.x = hunt ? 1.4 : 1;
+  // sounds (positional)
+  const pos = { x: lv.p.x, y: 2, z: lv.p.z };
+  lv.clickT -= dt; lv.groanT -= dt; lv.stepT -= dt * (0.6 + sp);
+  if (lv.clickT < 0) { lv.clickT = hunt ? 0.6 + Math.random() * 0.5 : 2 + Math.random() * 3; world.sfx?.clicks(pos); }
+  if (lv.groanT < 0) { lv.groanT = hunt ? 2.5 + Math.random() * 2 : 7 + Math.random() * 7; world.sfx?.groan(pos); }
+  if (sp > 0.3 && lv.stepT < 0) { lv.stepT = 0.5; world.sfx?.creatureStep(pos, hunt); }
+  if (lv.mode !== c.mode && c.mode === 'hunt') world.sfx?.groan(pos);
+  lv.mode = c.mode;
+  return lv.p;
+}
+export function copyListenerPose(dst, src) {
+  dst.g.position.copy(src.g.position); dst.g.rotation.copy(src.g.rotation);
+  dst.body.rotation.copy(src.body.rotation);
+  dst.head.rotation.copy(src.head.rotation); dst.head.position.copy(src.head.position);
+  dst.mouth.scale.copy(src.mouth.scale);
+  dst.legs.forEach((l, i) => l.rotation.copy(src.legs[i].rotation));
+  dst.arms.forEach((a, i) => a.rotation.copy(src.arms[i].rotation));
 }
 
 export function buildMaze(world) {
@@ -170,8 +218,7 @@ export function buildMaze(world) {
   // ---- the Listener
   const L = listenerMesh();
   world.scene.add(L.g);
-  const lp = new THREE.Vector3(), lv = { yaw: 0, phase: 0, clickT: 2, groanT: 5, stepT: 0, mode: 'idle' };
-  let first = true;
+  const lv = newListenerAnim();
 
   return {
     dampers,
@@ -193,35 +240,7 @@ export function buildMaze(world) {
       const active = s.patch?.power && !s.maze?.cleared && c;
       L.g.visible = !!active;
       if (!active) { world.flashFlicker = 0; return; }
-      const target = new THREE.Vector3(c.x, 0, c.z);
-      if (first) { lp.copy(target); first = false; }
-      const prev = lp.clone();
-      lp.lerp(target, Math.min(1, dt * 8));
-      const sp = prev.distanceTo(lp) / Math.max(dt, 1e-3);
-      L.g.position.copy(lp);
-      let dy = c.yaw - lv.yaw;
-      while (dy > Math.PI) dy -= Math.PI * 2;
-      while (dy < -Math.PI) dy += Math.PI * 2;
-      lv.yaw += dy * Math.min(1, dt * 6);
-      L.g.rotation.y = lv.yaw;
-      lv.phase += dt * (1.5 + sp * 3);
-      const sw = Math.sin(lv.phase) * Math.min(1, sp);
-      L.legs[0].rotation.x = sw * 0.6; L.legs[1].rotation.x = -sw * 0.6;
-      L.arms[0].rotation.x = -sw * 0.25 + 0.05; L.arms[1].rotation.x = sw * 0.25 + 0.05;
-      L.arms[0].rotation.z = -0.08; L.arms[1].rotation.z = 0.08;
-      const hunt = c.mode === 'hunt';
-      L.body.rotation.x = hunt ? 0.35 : 0.1;
-      L.head.rotation.z = Math.sin(t * 7) * (hunt ? 0.25 : 0.08) + (Math.sin(t * 1.3) > 0.97 ? 0.6 : 0);
-      L.head.position.z = hunt ? 0.36 : 0.22;
-      L.mouth.scale.x = hunt ? 1.4 : 1;
-      // sounds (positional)
-      const pos = { x: lp.x, y: 2, z: lp.z };
-      lv.clickT -= dt; lv.groanT -= dt; lv.stepT -= dt * (0.6 + sp);
-      if (lv.clickT < 0) { lv.clickT = hunt ? 0.6 + Math.random() * 0.5 : 2 + Math.random() * 3; world.sfx?.clicks(pos); }
-      if (lv.groanT < 0) { lv.groanT = hunt ? 2.5 + Math.random() * 2 : 7 + Math.random() * 7; world.sfx?.groan(pos); }
-      if (sp > 0.3 && lv.stepT < 0) { lv.stepT = 0.5; world.sfx?.creatureStep(pos, hunt); }
-      if (lv.mode !== c.mode && c.mode === 'hunt') world.sfx?.groan(pos);
-      lv.mode = c.mode;
+      const lp = animateListener(L, lv, c, dt, t, world);
       // flashlight flicker when it's near GHOST
       const body = world.agentBody;
       if (body) {

@@ -13,7 +13,7 @@ const freshZones = (m) => ({
   doors: { A: 0, C: 0, E: 0, V: 0, H: 0, L1: 0, L2: 0, L3: 0, LIFT: 0 },
   gate: { entry: '', status: 'idle', at: 0 },
   lasers: { checkpoint: 0, cleared: 0 },
-  patch: { plugs: {}, power: 0, fault: -1, at: 0 },
+  patch: { plugs: {}, power: 0, fault: -1, at: 0, test: {} },
   maze: {
     dampers: Object.fromEntries(m.maze.dampers.map((d) => [d.id, 0])),
     creature: { ...cellCenter(...m.maze.lair), yaw: 0, mode: 'idle' },
@@ -22,8 +22,21 @@ const freshZones = (m) => ({
   },
   optics: { orient: m.optics.init.slice(), lit: [0, 0], done: 0 },
   vault: { dial: m.vault.start, stage: 0, open: 0, taken: 0 },
-  lockdown: { active: 0, lift: 'idle', liftAt: 0, checkpoint: 'H' },
+  lockdown: { active: 0, lift: 'idle', liftAt: 0, checkpoint: 'H', stalker: null },
 });
+
+// How far (metres along open passages) the Listener hears GHOST. Footsteps first, then the radio:
+// LINE's voice out of the walkie speaker (32) carries further than GHOST talking back (64).
+export function hearRadius(flags) {
+  const moving = flags & 8, sprint = flags & 4, crouch = flags & 1;
+  return Math.max(sprint ? 14 : moving ? (crouch ? 2.2 : 6.5) : 0, flags & 32 ? 6 : 0, flags & 64 ? 4.5 : 0);
+}
+
+// The service spine as a single line: u = 0 at door H, 20 at the corner, 55 at the lift lobby.
+const SPINE_U = { L1: 11, L2: 35, L3: 47, end: 60 };
+const spineU = (x, z) => (x < 11 && z < -62 ? x + 8 : 20 + (z + 65));
+const spinePos = (u) => (u <= 20 ? { x: -8 + u, z: -65 } : { x: 12, z: -65 + (u - 20) });
+const STALKER_DELAY = { recruit: 75, operative: 45, ghost: 25 };
 
 export class Room {
   constructor({ code, send, now = () => Date.now(), seed, difficulty = 'operative' }) {
@@ -59,6 +72,7 @@ export class Room {
       ...freshZones(this.mission),
     };
     this.creatureAI = { path: [], last: null, heardAt: 0, idleUntil: this.now() + 4000, prev: null };
+    this.stalkerAI = { u: 0, target: null, heardAt: 0, idleUntil: 0, wanderTo: null, spawnAt: 0 };
   }
 
   // ---------------------------------------------------------------- players
@@ -217,6 +231,10 @@ export class Room {
             s.doors.A = 1; g.status = 'ok';
             this.event({ k: 'sfx', name: 'granted', at: 'gate' });
             this.advance();
+          } else if (!g.warned) {
+            // the first wrong code is a warning: teaches that mistakes cost, before the mission really starts
+            g.warned = 1; g.status = 'warn'; g.entry = '';
+            this.event({ k: 'gateWarn' });
           } else {
             g.status = 'denied'; g.entry = '';
             this.strike('ACCESS DENIED', { zone: 'gate' });
@@ -250,6 +268,7 @@ export class Room {
           if (Object.entries(s.patch.plugs).some(([k, v]) => v === a.socket && k !== key)) return;
           s.patch.plugs[key] = a.socket;
         } else delete s.patch.plugs[key];
+        delete s.patch.test[a.color]; // the last breaker test no longer says anything about this cable
         this.broadcast();
         return;
       }
@@ -261,7 +280,10 @@ export class Room {
         for (const sol of P.solution) {
           const t = `T${P.topOrder.indexOf(sol.glyph)}`, b = `B${P.bottomOrder.indexOf(sol.number)}`;
           const e0 = s.patch.plugs[`${sol.color}0`], e1 = s.patch.plugs[`${sol.color}1`];
-          if ((e0 === t && e1 === b) || (e0 === b && e1 === t)) ok++;
+          const good = (e0 === t && e1 === b) || (e0 === b && e1 === t);
+          if (good) ok++;
+          // continuity lamps on the frame (GHOST's side) report each cable; the terminal only the count
+          s.patch.test[sol.color] = good ? 1 : 0;
         }
         if (ok === 3) {
           s.patch.power = 1; s.patch.fault = 0; s.doors.C = 1;
@@ -314,7 +336,7 @@ export class Room {
         const v = s.vault, V = m.vault;
         const d = a.d > 0 ? 1 : -1;
         v.dial = (v.dial + d + 100) % 100;
-        let sig = 'tick';
+        let sig = 'tick', drag = false;
         if (v.stage < 3) {
           const req = V.models[V.modelIdx].dirs[v.stage] === 'L' ? 1 : -1;
           if (d === req) {
@@ -323,10 +345,13 @@ export class Room {
               const di = V.decoys[v.stage].indexOf(v.dial);
               if (di >= 0) sig = V.decoySigs[v.stage][di];
             }
+            // GHOST's fingers feel every gate (true or false) as drag; only LINE's scope tells them apart.
+            const cands = [V.combo[v.stage], ...V.decoys[v.stage]];
+            drag = cands.some((c) => Math.min((v.dial - c + 100) % 100, (c - v.dial + 100) % 100) <= 1);
           }
         }
         this.event({ k: 'acoustic', sig }, 'handler');
-        this.event({ k: 'dial' }, 'agent');
+        this.event({ k: 'dial', drag }, 'agent');
         this.broadcast();
         return;
       }
@@ -335,7 +360,11 @@ export class Room {
         const v = s.vault;
         if (v.stage >= 3) return;
         if (v.dial === m.vault.combo[v.stage]) { v.stage++; this.event({ k: 'acoustic', sig: 'pickup' }, 'handler'); }
-        else { v.stage = 0; this.event({ k: 'acoustic', sig: 'slip' }, 'handler'); }
+        else {
+          // a wrong SET drops the wheel being set; on GHOST clearance the whole pack falls
+          if (m.diff.key === 'ghost') v.stage = 0;
+          this.event({ k: 'acoustic', sig: 'slip' }, 'handler');
+        }
         this.event({ k: 'sfx', name: 'clunk' });
         this.broadcast();
         return;
@@ -383,8 +412,7 @@ export class Room {
         this.lastHazard[hk] = now;
         if (a.kind === 'pit') {
           this.strike('GHOST FELL — SPINE COLLAPSE', { zone: 'escape' });
-          const cp = s.lockdown.checkpoint;
-          const p = cp === 'H' ? { x: -7, z: -65, yaw: -Math.PI / 2 } : cp === 'L1' ? { x: 4.5, z: -65, yaw: -Math.PI / 2 } : cp === 'L2' ? { x: 12, z: -48.5, yaw: Math.PI } : { x: 12, z: -36.5, yaw: Math.PI };
+          const p = this.checkpointPose();
           this.teleport(p.x, p.z, p.yaw);
         } else if (a.kind === 'cable') this.strike('ELECTROCUTION — LIVE CABLE', { zone: 'escape' });
         return;
@@ -403,6 +431,8 @@ export class Room {
     s.doors.V = 0; s.doors.E = 0; s.doors.H = 1;
     s.lockdown.active = 1;
     s.escapeEnd = this.now() + this.mission.diff.escape * 1000;
+    s.lockdown.stalker = null;
+    Object.assign(this.stalkerAI, { u: 0, target: null, heardAt: 0, idleUntil: 0, wanderTo: null, spawnAt: this.now() + (STALKER_DELAY[this.mission.diff.key] ?? 45) * 1000 });
     if (!practice) this.event({ k: 'lockdown' });
     this.advance();
     this.broadcast();
@@ -420,8 +450,74 @@ export class Room {
         this.broadcast();
       }
       if (s.patch.power && !s.maze.cleared) this.tickCreature(0.1);
+      if (s.lockdown.active) this.tickStalker(0.1);
     }
     this.flush();
+  }
+
+  checkpointPose() {
+    const cp = this.state.lockdown.checkpoint;
+    return cp === 'H' ? { x: -7, z: -65, yaw: -Math.PI / 2 } : cp === 'L1' ? { x: 4.5, z: -65, yaw: -Math.PI / 2 } : cp === 'L2' ? { x: 12, z: -48.5, yaw: Math.PI } : { x: 12, z: -36.5, yaw: Math.PI };
+  }
+
+  // Z7: the Listener followed GHOST out of the undercroft. It walks the spine as a line, can't
+  // pass a sealed bulkhead, hears the same things as in the maze, and only thermal shows it.
+  // It lurks a few metres behind a silent GHOST; footsteps or the radio inside its hearing bring it on.
+  tickStalker(dt) {
+    const s = this.state, now = this.now(), ai = this.stalkerAI;
+    if (now < ai.spawnAt) return;
+    const pose = this.pose && now - this.pose.at < 1500 ? this.pose : null;
+    const inSpine = pose && ['escape', 'lift'].includes(zoneOf(pose.x, pose.z));
+    const au = inSpine ? Math.max(0, Math.min(SPINE_U.end, spineU(pose.x, pose.z))) : null;
+    if (!s.lockdown.stalker) {
+      s.lockdown.stalker = { x: -8, z: -65, yaw: -Math.PI / 2, mode: 'idle' };
+      ai.u = 0; ai.idleUntil = now + 2500;
+      // it comes out with purpose: straight up the spine to a few metres behind wherever GHOST is
+      ai.wanderTo = au != null ? Math.max(0, au - 6 - Math.random() * 2) : 8;
+      this.event({ k: 'stalker' });
+    }
+    const st = s.lockdown.stalker;
+    // can't pass a closed bulkhead
+    const wall = !s.doors.L1 ? SPINE_U.L1 - 0.6 : !s.doors.L2 ? SPINE_U.L2 - 0.6 : !s.doors.L3 ? SPINE_U.L3 - 0.6 : SPINE_U.end;
+    if (au != null) {
+      const d = Math.abs(au - ai.u);
+      if (d < 1.0 && now >= ai.idleUntil) {
+        this.strike('THE LISTENER GOT GHOST', { zone: 'escape' });
+        const p = this.checkpointPose();
+        this.teleport(p.x, p.z, p.yaw);
+        ai.u = 0; ai.target = null; ai.wanderTo = null; ai.idleUntil = now + 12000;
+        Object.assign(st, spinePos(0), { mode: 'idle' });
+        this.event({ k: 'sfx', name: 'caught' });
+        this.broadcast();
+        return;
+      }
+      const r = hearRadius(pose.flags);
+      if ((r > 0 && d <= r) || d < 1.7) { ai.target = au; ai.heardAt = now; }
+    }
+    if (now < ai.idleUntil) { st.mode = 'idle'; this.broadcast(); return; }
+    const hunting = ai.target != null && now - ai.heardAt < 5000;
+    let goal;
+    if (hunting) goal = ai.target;
+    else {
+      // drift in fits and starts: back toward the last thing it heard if that's recent, otherwise
+      // an aimless shuffle that tends to creep up the spine. It never knows where a silent GHOST is.
+      if (ai.wanderTo == null) {
+        const recent = ai.target != null && now - ai.heardAt < 20000;
+        ai.wanderTo = recent ? ai.target + (Math.random() - 0.5) * 3 : ai.u - 4 + Math.random() * 12;
+        // ...but it lurks rather than stumbling onto a silent GHOST: it stays a few metres back
+        if (!recent && au != null && au > ai.u) ai.wanderTo = Math.min(ai.wanderTo, au - 3.5 - Math.random() * 2);
+      }
+      goal = ai.wanderTo;
+    }
+    goal = Math.max(0, Math.min(wall, goal));
+    const speed = (hunting ? 2.2 : 0.9) * this.mission.diff.creature;
+    const du = goal - ai.u;
+    if (Math.abs(du) > 0.05) ai.u += Math.sign(du) * Math.min(Math.abs(du), speed * dt);
+    else if (!hunting) { ai.wanderTo = null; if (Math.random() < 0.5) ai.idleUntil = now + 1200 + Math.random() * 2800; }
+    const p = spinePos(ai.u);
+    const dir = Math.sign(du) || 1;
+    Object.assign(st, p, { mode: hunting ? 'hunt' : 'wander', yaw: ai.u < 20 ? (dir > 0 ? -Math.PI / 2 : Math.PI / 2) : (dir > 0 ? Math.PI : 0) });
+    this.broadcast();
   }
 
   tickCreature(dt) {
@@ -447,8 +543,7 @@ export class Room {
     let heard = false;
     if (acell && pose) {
       const flags = pose.flags;
-      const moving = flags & 8, sprint = flags & 4, crouch = flags & 1;
-      const radius = sprint ? 14 : moving && !crouch ? 6.5 : 0;
+      const radius = hearRadius(flags);
       const direct = Math.hypot(pose.x - c.x, pose.z - c.z);
       const path = this.mazePath(ccell, acell, dampers);
       const pd = path ? path.length * MAZE.cell : Infinity;

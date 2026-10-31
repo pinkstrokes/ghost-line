@@ -161,6 +161,7 @@ function site(ctx, m) {
   hand(ctx, 'hall rows start at the door:\n01 nearest, 12 at the far end.\nlanes A–D left to right\nlooking IN from the door', 440, 270, 7.5, { rot: -0.03 });
   hand(ctx, 'C02 looks back at the door.\nleft/right are FLIPPED on it!', 600, 330, 7, { rot: 0.04 });
   hand(ctx, 'spine = smoke.\nonly the IR cams\nsee through it', 450, 400, 7.5, { rot: 0.02 });
+  hand(ctx, 'if the undercroft thing\nfollows them out — it shows\nBLACK on thermal (cold). it\nhears the radio. go QUIET.', 590, 405, 7, { rot: -0.03 });
   titleBlock(ctx, { sheet: 'A-1', title: 'SITE & GROUND FLOOR PLAN', sub: 'CCTV + DOOR SCHEDULES', rev: 'C' });
   wear(ctx, rng);
 }
@@ -185,27 +186,17 @@ function access(ctx, m) {
   const t2 = table(ctx, bx, 44, cols, rowsFor(G.table), { rowH: 10.5, size: 5.4, font: MONO, weight: 700 });
   cloud(ctx, bx - 5, 39, t2.w + 10, t2.h + 10);
   triangleTag(ctx, bx + t2.w + 12, 36, 'B');
-  label(ctx, 'COLUMN = COLOUR OF THE STATUS LAMP BESIDE THE ACCESS PLATE.', bx, 44 + t2.h + 10, 3.6, { color: INK2 });
-  label(ctx, 'D1, D2, D3 = DIGITS FOR THE PLATE GLYPHS, READ LEFT → RIGHT.', bx, 44 + t2.h + 16, 3.6, { color: INK2 });
-  // check digit flowchart
+  label(ctx, 'COLUMN = COLOUR OF THE STATUS LAMP BESIDE THE ACCESS PLATE.', bx, 44 + t2.h + 14, 3.6, { color: INK2 });
+  label(ctx, 'D1, D2, D3 = DIGITS FOR THE PLATE GLYPHS, READ LEFT → RIGHT.', bx, 44 + t2.h + 20, 3.6, { color: INK2 });
+  // the check digit procedure is posted in the guard booth (GHOST's side), not printed here
   const fx = 370, fy = 40;
   label(ctx, 'FIG. A-2.1  CHECK DIGIT  (4TH DIGIT OF THE CODE)', fx, fy - 4, 5.2, { weight: 700 });
-  const box = (x, y, w, h, t) => { ctx.strokeStyle = INK; ctx.lineWidth = 0.6; ctx.strokeRect(x - w / 2, y - h / 2, w, h); t.split('\n').forEach((l, i, a) => label(ctx, l, x, y + (i - (a.length - 1) / 2) * 5.2, 3.9, { align: 'center' })); };
-  const diamond = (x, y, w, h, t) => { ctx.strokeStyle = INK; ctx.lineWidth = 0.6; ctx.beginPath(); ctx.moveTo(x, y - h / 2); ctx.lineTo(x + w / 2, y); ctx.lineTo(x, y + h / 2); ctx.lineTo(x - w / 2, y); ctx.closePath(); ctx.stroke(); t.split('\n').forEach((l, i, a) => label(ctx, l, x, y + (i - (a.length - 1) / 2) * 5, 3.7, { align: 'center' })); };
-  const arrow = (x1, y1, x2, y2, t) => { ctx.strokeStyle = INK; ctx.fillStyle = INK; ctx.lineWidth = 0.5; line(ctx, x1, y1, x2, y2); arrowHead(ctx, x2, y2, Math.atan2(y2 - y1, x2 - x1)); if (t) label(ctx, t, (x1 + x2) / 2 + 3, (y1 + y2) / 2 - 2, 3.4, { weight: 700 }); };
-  const cx = fx + 70;
-  box(cx, fy + 12, 90, 12, 'READ SERIAL ON THE PLATE\n(FORMAT KX-####)');
-  arrow(cx, fy + 18, cx, fy + 30);
-  diamond(cx, fy + 44, 80, 28, 'LAST DIGIT\nOF SERIAL\nODD?');
-  arrow(cx - 40, fy + 44, cx - 70, fy + 44); arrow(cx - 70, fy + 44, cx - 70, fy + 66, 'YES');
-  arrow(cx + 40, fy + 44, cx + 70, fy + 44); arrow(cx + 70, fy + 44, cx + 70, fy + 66, 'NO');
-  box(cx - 70, fy + 78, 74, 20, 'C = (D1 × D3 + D2)\nMOD 10');
-  box(cx + 70, fy + 78, 74, 20, 'C = (D1 + D2 + D3)\nMOD 10');
-  arrow(cx - 70, fy + 88, cx - 70, fy + 104); arrow(cx + 70, fy + 88, cx + 70, fy + 104);
-  line(ctx, cx - 70, fy + 104, cx + 70, fy + 104); arrow(cx, fy + 104, cx, fy + 114);
-  box(cx, fy + 124, 110, 16, 'KEY IN  D1 D2 D3 C  THEN  ENT\nWRONG CODE = ALARM');
-  hand(ctx, 'MOD 10 = just the\nlast digit of the answer', cx + 70, fy + 132, 6.5, { rot: 0.05 });
-  label(ctx, 'EXAMPLE: D = 4,7,2  SERIAL KX-1938 → EVEN → C = (4+7+2) MOD 10 = 3 → 4723', fx, fy + 150, 3.6, { color: INK2 });
+  ctx.strokeStyle = INK2; ctx.lineWidth = 0.5; ctx.setLineDash([2, 1.5]); ctx.strokeRect(fx, fy + 4, 240, 60); ctx.setLineDash([]);
+  label(ctx, 'SUPERSEDED — SEE SOP 7C-4', fx + 120, fy + 24, 6, { align: 'center', weight: 700 });
+  label(ctx, '(POSTED INSIDE THE GUARD BOOTH, YARD WEST)', fx + 120, fy + 34, 3.8, { align: 'center', color: INK2 });
+  label(ctx, 'CODE = D1 D2 D3 + CHECK DIGIT, THEN ENT.', fx + 120, fy + 44, 3.8, { align: 'center', color: INK2 });
+  stamp(ctx, 'REMOVED', fx + 200, fy + 52, 9, -0.25, rng);
+  hand(ctx, 'GHOST has to do the 4th\ndigit off the booth sheet.\ngive them D1 D2 D3 slowly', fx + 20, fy + 92, 7.5, { rot: 0.03 });
   // override rotor key schedule
   const ry = 300;
   label(ctx, 'LOCKDOWN OVERRIDE  —  ROTOR FORM 7/L  KEY SCHEDULE', 370, ry, 5.2, { weight: 700 });
@@ -234,7 +225,7 @@ function access(ctx, m) {
   label(ctx, 'OUTER RING (FIXED)', rcx, rcy - R1 - 6, 3.6, { align: 'center', color: INK2 });
   const ix = 520, iy = 440;
   ctx.setLineDash([1.5, 1.2]); ctx.beginPath(); ctx.arc(ix, iy, R3 + 8, 0, 7); ctx.stroke(); ctx.setLineDash([]);
-  label(ctx, '✂ CUT OUT, PIN AT CENTRE (PAPER COPIES)', ix, iy - R3 - 13, 3.4, { align: 'center', color: INK2 });
+  label(ctx, '✂ CUT OUT, PIN AT CENTRE (PAPER COPIES)', ix, iy + R3 + 16, 3.4, { align: 'center', color: INK2 });
   for (let k = 0; k < 16; k++) {
     const a = -Math.PI / 2 + (k * Math.PI * 2) / 16;
     label(ctx, String(m.lockdown.inner[k]), ix + Math.cos(a) * R3, iy + Math.sin(a) * R3, 6, { align: 'center', weight: 700, font: MONO, rot: a + Math.PI / 2 });
@@ -243,7 +234,7 @@ function access(ctx, m) {
   label(ctx, 'INNER DISC', ix, iy, 4, { align: 'center', weight: 700 });
   hand(ctx, 'the INNER ring turns.\nthe outer one stays put.', 40, 470, 8);
   hand(ctx, 'little lamp colour → column.\nif GHOST cant tell, ask\n"warm or cold?"', 40, 520, 7.5, { rot: 0.02 });
-  titleBlock(ctx, { sheet: 'A-2', title: 'ACCESS CONTROL', sub: 'CODE TABLES · CHECK DIGIT · OVERRIDE ROTOR', rev: 'B' });
+  titleBlock(ctx, { sheet: 'A-2', title: 'ACCESS CONTROL', sub: 'CODE TABLES · OVERRIDE ROTOR', rev: 'B' });
   wear(ctx, rng);
 }
 
@@ -385,7 +376,7 @@ function patch(ctx, m) {
   const W = 260, H = 222;
   P.variants.forEach((v, i) => schematic(ctx, v, 24 + (i % 3) * (W + 10), 68 + Math.floor(i / 3) * (H + 8), W, H, i === 0));
   hand(ctx, 'hops are NOT joints. trace slowly.\nthe numbers on the frame are jumbled —\nGHOST finds the number, not the position', 40, 545, 7.5, { rot: -0.02 });
-  hand(ctx, 'B and 8 look the same on those plates. so do 1 and I.', 300, 560, 7, { rot: 0.02 });
+  hand(ctx, 'B/8, 1/I, O/0, S/5, 4/A all look alike on those plates. make GHOST spell it.', 250, 560, 7, { rot: 0.02 });
   titleBlock(ctx, { sheet: 'E-1', title: 'PATCH FRAME WIRING', sub: 'SUBSTATION 2 · FRAMES PF SERIES', rev: 'C' });
   wear(ctx, rng);
 }
@@ -465,7 +456,7 @@ function undercroft(ctx, m) {
     '4. PIR SENSORS S-xx REPORT MOTION ONLY — NOT IDENTITY.',
     '5. NO LIGHTING IN SERVICE. CARRY A TORCH.',
   ].forEach((n, i) => label(ctx, n, nx, 92 + i * 8, 3.7, { color: INK2 }));
-  hand(ctx, 'it hears running from far off,\nwalking up close. crouching = nothing.', nx, 180, 7.5);
+  hand(ctx, 'it hears running from far off,\nwalking, even creeping up close.\nAND IT HEARS THE RADIO. whisper.', nx, 180, 7.5);
   hand(ctx, 'shut a damper on it —\nit cant open them', nx, 212, 7.5, { rot: 0.03 });
   const [lc, lr] = Z.lair;
   hand(ctx, '?', cx(lc) + cs / 2 + 12, cy(lr) + 14, 14, { rot: 0.2 });
@@ -505,15 +496,15 @@ function optics(ctx, m) {
   ctx.fillStyle = HOT; ctx.fillRect(X(Z.x0) - 5, LY(O.emitterJ) - 2.5, 5, 5);
   ctx.strokeStyle = HOT; ctx.setLineDash([1.5, 1.5]); line(ctx, X(Z.x0), LY(O.emitterJ), X(Z.x0) + 30, LY(O.emitterJ)); ctx.setLineDash([]);
   ctx.fillStyle = HOT; arrowHead(ctx, X(Z.x0) + 30, LY(O.emitterJ), 0, 3);
-  tag(X(Z.x0) - 8, LY(O.emitterJ) - 8, 'E-1 EMITTER', 'IR 940 nm — INVISIBLE', 'right');
-  // receivers
-  const rN = O.receivers.find((r) => r.side === 'N'), rE = O.receivers.find((r) => r.side === 'E');
-  ctx.fillStyle = HOT;
-  ctx.fillRect(LX(rN.idx) - 2.5, Y(Z.z0) - 5, 5, 5);
-  ctx.fillRect(X(Z.x1), LY(rE.idx) - 2.5, 5, 5);
-  tag(LX(rN.idx), Y(Z.z0) - 12, 'R1 RECEIVER', 'ACCEPTS BEAM TRAVELLING NORTH', 'center');
-  tag(X(Z.x1) + 8, LY(rE.idx) - 2, 'R2', 'RECEIVER — BEAM', 'left');
-  label(ctx, 'TRAVELLING EAST', X(Z.x1) + 8, LY(rE.idx) + 10, 3.2, { color: INK2 });
+  tag(X(Z.x0) - 16, LY(O.emitterJ) - 8, 'TX EMITTER', 'IR 940 nm — INVISIBLE', 'right');
+  // port numbers (stencilled on site above each port)
+  for (let i = 0; i < OPTICS.n; i++) label(ctx, `N${i + 1}`, LX(i), Y(Z.z0) - 6, 2.6, { align: 'center', color: INK2 });
+  for (let j = 0; j < OPTICS.n; j++) { label(ctx, `W${j + 1}`, X(Z.x0) - 6, LY(j) + 1, 2.6, { align: 'right', color: INK2 }); label(ctx, `E${j + 1}`, X(Z.x1) + 6, LY(j) + 1, 2.6, { color: INK2 }); }
+  // receivers: which wall is recorded, which port isn't (re-fitted; GHOST has to find the live ones)
+  tag(X((Z.x0 + Z.x1) / 2), Y(Z.z0) - 20, 'R1 RECEIVER — NORTH WALL, PORT ??', 'ACCEPTS BEAM TRAVELLING NORTH · STANDBY LAMP: 1 BLINK', 'center');
+  tag(X(Z.x1) + 20, LY(3) - 2, 'R2 RECEIVER', 'EAST WALL, PORT ??', 'left');
+  label(ctx, 'BEAM TRAVELLING EAST', X(Z.x1) + 20, LY(3) + 10, 3.2, { color: INK2 });
+  label(ctx, 'STANDBY LAMP: 2 BLINKS', X(Z.x1) + 20, LY(3) + 16, 3.2, { color: INK2 });
   // obstacles
   for (const [i, j] of O.obstacles) hatchRect(ctx, LX(i) - 0.4 * s, LY(j) - 0.4 * s, 0.8 * s, 0.8 * s, 1.4);
   // pedestals
@@ -527,13 +518,13 @@ function optics(ctx, m) {
   // doors
   const exitX = MAZE.x0 + m.maze.exitCol * MAZE.cell + MAZE.cell / 2;
   label(ctx, '▲ FROM UNDERCROFT', X(exitX), Y(Z.z1) + 18, 3.6, { align: 'center', weight: 700 });
-  label(ctx, 'DOOR E →', X(Z.x1) + 8, Y(-56), 4, { weight: 700 });
-  label(ctx, '(OPENS WHEN R1 + R2 BOTH LIT)', X(Z.x1) + 8, Y(-56) + 6, 3.2, { color: INK2 });
+  label(ctx, 'DOOR E →', X(Z.x1) + 20, Y(-56), 4, { weight: 700 });
+  label(ctx, '(OPENS WHEN R1 + R2 BOTH LIT)', X(Z.x1) + 20, Y(-56) + 6, 3.2, { color: INK2 });
   // CAM-06 note
   const cam = CAMERAS.find((c) => c.id === 'CAM-06');
   ctx.strokeStyle = INK; ctx.lineWidth = 0.5;
   ctx.beginPath(); ctx.arc(X(cam.pos[0]), Y(cam.pos[2]), 4, 0, 7); ctx.stroke();
-  label(ctx, 'C06 (CEILING, LOOKING DOWN)', X(cam.pos[0]) + 6, Y(cam.pos[2]) - 6, 3.4, { weight: 700 });
+  label(ctx, 'C06 = CEILING CAMERA (○), LOOKING DOWN', X(Z.x0), Y(Z.z1) + 30, 3.4, { weight: 700 });
   // right column: orientation legend + notes
   const rx = 500;
   label(ctx, 'MIRROR MOUNTS', rx, 70, 6, { weight: 700 });
@@ -546,18 +537,19 @@ function optics(ctx, m) {
   }
   label(ctx, '8 DETENTS, 22.5° EACH', lcx, lcy + lr + 8, 3.6, { align: 'center', color: INK2 });
   label(ctx, 'ON SITE:  [E] TURNS ONE DETENT CLOCKWISE (SEEN FROM ABOVE)', rx, lcy + lr + 20, 3.6, { color: INK2 });
-  label(ctx, '          [Q] TURNS ONE DETENT ANTI-CLOCKWISE', rx, lcy + lr + 27, 3.6, { color: INK2 });
+  label(ctx, '          [Q] TURNS ONE DETENT ANTICLOCKWISE', rx, lcy + lr + 27, 3.6, { color: INK2 });
   label(ctx, 'NOTES', rx, 230, 6, { weight: 700 });
   [
     '1. FIVE FRONT-SURFACE MIRRORS + ONE HALF-SILVERED SPLITTER.',
     '   THE SPLITTER PASSES HALF THE BEAM AND REFLECTS HALF.',
     '2. THE BEAM IS INFRA-RED: VISIBLE ONLY ON C06 IN IR MODE.',
     '3. PILLARS (HATCHED) STOP THE BEAM.',
-    '4. ALL WALL PORTS LOOK ALIKE ON SITE. ONLY E-1, R1, R2 ARE LIVE.',
+    '4. ALL WALL PORTS LOOK ALIKE ON C06. LIVE RECEIVERS SHOW AN AMBER STANDBY',
+    '   LAMP UNDER THE PORT (HOODED: NOT VISIBLE FROM THE CEILING).',
     '5. DOOR E RELEASES WHEN R1 AND R2 ARE LIT AT THE SAME TIME.',
   ].forEach((n, i) => label(ctx, n, rx, 242 + i * 8, 3.7, { color: INK2 }));
   hand(ctx, 'C06 is mounted crooked —\nfind the emitter on screen first,\nthen turn the plan to match', rx, 320, 7.5);
-  hand(ctx, 'GHOST cant see the beam.\nsay "turn B two clicks right"', rx, 370, 7.5, { rot: 0.03 });
+  hand(ctx, 'GHOST cant see the beam.\nwe cant see the lamps.\nask which ports blink, then\n"turn B two clicks right"', rx, 370, 7.5, { rot: 0.03 });
   northArrow(ctx, rx + 20, 440);
   titleBlock(ctx, { sheet: 'O-1', title: 'OPTICS LAB', sub: 'BENCH LAYOUT · BEAM PATH HARDWARE', rev: 'B' });
   wear(ctx, rng);
@@ -572,7 +564,7 @@ function vault(ctx, m) {
   label(ctx, 'TABLE V-1  MANUFACTURER SCHEDULE (MODEL PLATE IS ON THE DOOR, UPPER LEFT)', 30, 46, 4.6, { weight: 700 });
   const rows = V.models.map((md) => [md.name, ...md.dirs, SIG_NAMES[md.trueSig]]);
   table(ctx, 30, 52, [{ w: 64, title: 'MODEL' }, { w: 26, title: 'WHEEL 1' }, { w: 26, title: 'WHEEL 2' }, { w: 26, title: 'WHEEL 3' }, { w: 40, title: 'TRUE GATE' }], rows, { rowH: 11, size: 5, weight: 700 });
-  label(ctx, 'L = TURN LEFT / ANTI-CLOCKWISE — NUMBERS RISE.   R = TURN RIGHT / CLOCKWISE — NUMBERS FALL.', 30, 140, 3.8, { color: INK2 });
+  label(ctx, 'L = TURN LEFT / ANTICLOCKWISE — NUMBERS RISE.   R = TURN RIGHT / CLOCKWISE — NUMBERS FALL.', 30, 140, 3.8, { color: INK2 });
   // dial diagram
   const dx = 330, dy = 96, R = 40;
   ctx.strokeStyle = INK; ctx.lineWidth = 0.6;
@@ -595,7 +587,7 @@ function vault(ctx, m) {
   label(ctx, 'R', dx + R + 11, dy - 22, 6, { weight: 700 });
   // signatures
   label(ctx, 'FIG. V-2  CONTACT MICROPHONE SIGNATURES  (BMS · ACOUSTIC)', 30, 160, 4.8, { weight: 700 });
-  const sigs = [['alpha', 'GATE TYPE α'], ['beta', 'GATE TYPE β'], ['gamma', 'GATE TYPE γ'], ['pickup', 'δ  WHEEL CAPTURED'], ['slip', 'ε  WHEEL SLIPPED — ALL WHEELS RESET']];
+  const sigs = [['alpha', 'GATE TYPE α'], ['beta', 'GATE TYPE β'], ['gamma', 'GATE TYPE γ'], ['pickup', 'δ  WHEEL CAPTURED'], ['slip', m.diff?.key === 'ghost' ? 'ε  WHEEL SLIPPED — ALL WHEELS RESET' : 'ε  WHEEL SLIPPED — RE-DIAL THIS WHEEL']];
   sigs.forEach(([k, name], i) => {
     const x = 30 + (i % 3) * 200, y = 172 + Math.floor(i / 3) * 92, w = 180, h = 70;
     ctx.fillStyle = 'rgba(5,25,15,0.55)'; ctx.fillRect(x, y, w, h);
@@ -621,14 +613,15 @@ function vault(ctx, m) {
   label(ctx, 'DIALLING PROCEDURE', 30, 392, 6, { weight: 700 });
   [
     '1. READ THE MODEL PLATE. FIND THE MODEL IN TABLE V-1.',
-    '2. WHEEL 1: TURN THE DIAL IN WHEEL 1\'S DIRECTION, SLOWLY, ONE NUMBER AT A TIME.',
-    '3. WHEN THE TRUE GATE SIGNATURE APPEARS, THE NUMBER AT THE INDEX IS THE GATE. PRESS [SET].',
-    '4. δ = CAPTURED, CONTINUE WITH THE NEXT WHEEL.   ε = SLIPPED, START AGAIN FROM WHEEL 1.',
+    '2. WHEEL 1: SPIN THE DIAL IN WHEEL 1\'S DIRECTION UNTIL THE OPERATOR FEELS IT DRAG. EVERY GATE DRAGS — TRUE OR FALSE.',
+    '3. AT EACH DRAG, STEP ONE NUMBER AT A TIME. WHEN THE TRUE GATE SIGNATURE APPEARS, THAT NUMBER IS THE GATE. PRESS [SET].',
+    m.diff?.key === 'ghost' ? '4. δ = CAPTURED, CONTINUE WITH THE NEXT WHEEL.   ε = SLIPPED, START AGAIN FROM WHEEL 1.'
+      : '4. δ = CAPTURED, CONTINUE WITH THE NEXT WHEEL.   ε = SLIPPED, FIND THIS WHEEL\'S GATE AGAIN.',
     '5. AFTER THREE CAPTURES PULL THE HANDLE.  PULLING EARLY SOUNDS THE TAMPER ALARM.',
   ].forEach((n, i) => label(ctx, n, 30, 404 + i * 8.5, 4, { color: INK2 }));
   hand(ctx, 'which peak is TALLER —\nfirst or second? thats the\nwhole trick with α and β', 640, 190, 8);
-  hand(ctx, 'GHOST hears the same click\nevery time. only we see it.', 430, 470, 7.5, { rot: 0.02 });
-  hand(ctx, 'ask for the number AS it ticks', 640, 270, 7.5, { rot: -0.04 });
+  hand(ctx, 'GHOST feels every drag the same.\nonly we can see which is real.', 430, 470, 7.5, { rot: 0.02 });
+  hand(ctx, 'ask for the number AS it ticks.\neach wheel has 3 drags, 1 real', 640, 270, 7.5, { rot: -0.04 });
   stamp(ctx, 'RESTRICTED', 700, 80, 14, 0.18, rng);
   titleBlock(ctx, { sheet: 'V-1', title: 'VAULT DOOR SERVICE', sub: 'MODELS · SIGNATURES · PROCEDURE', rev: 'D' });
   wear(ctx, rng);
@@ -638,7 +631,7 @@ export const SHEETS = [
   { id: '00', name: 'COVER', draw: cover },
   { id: 'A-1', name: 'SITE', draw: site },
   { id: 'A-2', name: 'ACCESS', draw: access },
-  { id: 'E-1', name: 'ELECTRICAL', draw: patch },
+  { id: 'E-1', name: 'PATCH FRAME', draw: patch },
   { id: 'M-1', name: 'UNDERCROFT', draw: undercroft },
   { id: 'O-1', name: 'OPTICS', draw: optics },
   { id: 'V-1', name: 'VAULT', draw: vault },

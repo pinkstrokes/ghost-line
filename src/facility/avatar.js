@@ -169,6 +169,9 @@ export class Avatar {
     while (dy < -Math.PI) dy += Math.PI * 2;
     g.rotation.y += dy * Math.min(1, dt * 12);
     const crouch = flags & 1 ? 1 : 0;
+    // knocked down (strike): topple sideways where the cameras can see it
+    this.downK = (this.downK || 0) + ((flags & 128 ? 1 : 0) - (this.downK || 0)) * Math.min(1, dt * (flags & 128 ? 5 : 12));
+    this.root.rotation.z = this.downK * 1.45;
     this.crouchT += (crouch - this.crouchT) * Math.min(1, dt * 10);
     this.phase += dt * this.speed * 3.2;
     const sw = Math.sin(this.phase) * Math.min(1, this.speed / 2.5);
@@ -184,7 +187,7 @@ export class Avatar {
     // face
     this.blinkAt -= dt;
     let face = 'neutral';
-    if (this.alarm > 0) { face = 'scared'; this.alarm -= dt; }
+    if (this.alarm > 0 || this.downK > 0.3) { face = 'scared'; this.alarm -= dt; }
     if (this.talk > 0.22) face = 'open'; else if (this.talk > 0.08) face = 'half';
     if (this.blinkAt < 0) { face = 'blink'; if (this.blinkAt < -0.12) this.blinkAt = 2 + Math.random() * 3; }
     this.setFace(face);

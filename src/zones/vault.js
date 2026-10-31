@@ -211,7 +211,7 @@ export function buildVault(world) {
     inspect: {
       camPos: new THREE.Vector3(DX - 0.02, DY + 0.12, DZ + 1.5), lookAt: new THREE.Vector3(DX - 0.02, DY + 0.08, DZ), fov: 50, res: 2.4,
       buttons: [bL, bR, bSet, handleHit],
-      hint: 'A/← LEFT (NUMBERS RISE) · D/→ RIGHT (NUMBERS FALL) · HOLD TO SPIN · SPACE = SET · H = PULL HANDLE',
+      hint: 'A/← LEFT (NUMBERS RISE) · D/→ RIGHT (NUMBERS FALL) · HOLD TO SPIN, SHIFT = FASTER · THE DIAL DRAGS NEAR A GATE · SPACE = SET · H = PULL HANDLE',
       onButton: (b) => {
         const a = b.userData.button.act;
         if (a === 'L') turn(1); if (a === 'R') turn(-1);
@@ -229,7 +229,9 @@ export function buildVault(world) {
         const dir = (I.down('KeyA') || I.down('ArrowLeft') ? 1 : 0) - (I.down('KeyD') || I.down('ArrowRight') ? 1 : 0);
         if (!dir || dir !== held.dir) { held = { dir: 0, t: 0 }; return; }
         held.t += dt;
-        const rate = I.down('ShiftLeft') ? 0.07 : 0.15;
+        // the dial bites near a gate: holding slows right down so GHOST can stop on it and call the numbers
+        const dragging = performance.now() - (world.vaultDragAt || 0) < 500;
+        const rate = dragging ? 0.5 : I.down('ShiftLeft') ? 0.05 : 0.11;
         while (held.t > rate) { held.t -= rate; turn(dir); }
       },
     },

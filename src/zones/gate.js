@@ -152,6 +152,7 @@ export function buildGate(world) {
     let txt = (g?.entry || '').padEnd(4, '_').split('').join(' '), col = '#7dff9a';
     if (s?.doors?.A) { txt = 'OPEN'; col = '#7dff9a'; }
     else if (g?.status === 'denied' && since < 1800) { txt = (t * 4) % 1 < 0.5 ? 'DENIED' : ''; col = '#ff5a40'; }
+    else if (g?.status === 'warn' && since < 3000) { txt = (t * 3) % 1 < 0.6 ? 'INVALID' : '1 LEFT'; col = '#ffb030'; }
     c.fillStyle = col; c.fillText(txt, 128, 34);
   };
   drawDisplay(null, 0);
@@ -163,7 +164,7 @@ export function buildGate(world) {
     inspect: {
       camPos: new THREE.Vector3(1.4, 1.3, 0.86), lookAt: new THREE.Vector3(1.4, 1.3, 0.0), fov: 48,
       buttons,
-      hint: 'CLICK KEYS  ·  0-9 / ENTER / BACKSPACE ALSO WORK',
+      hint: 'CLICK KEYS  ·  0-9  ·  ENTER = ENT  ·  BACKSPACE = CLR',
       onButton: (b) => { world.act({ k: 'key', v: b.userData.button.key }); press(b); },
       onKey: (code) => {
         const map = { Enter: 'ENT', NumpadEnter: 'ENT', Backspace: 'CLR', Delete: 'CLR' };
@@ -225,6 +226,8 @@ export function buildGate(world) {
   chair(B, -7.8, 7.3, 0, true);
   papers(B, -8, 7, 8, 1.2);
   B.slab(-6.62, 0, 7.42, -6.0, 2.15, 7.47, 0x6b7066, { ry: 0 });
+  // SOP 7C-4 pinned inside the booth: the check-digit procedure lives here, not on LINE's blueprint
+  B.decal(-8.05, 1.55, 6.165, 0, 0.72, 0.52, 720, 520, drawSop);
   // floodlight
   B.cyl(9, 3, 9, 0.1, 6, PAL.metalDark, { sides: 6, collide: true });
   B.box(8.8, 6.0, 8.6, 0.7, 0.45, 0.35, PAL.metalDark, { rx: 0.5, bevel: 0.04 });
@@ -256,6 +259,11 @@ export function buildGate(world) {
   }
   cameraProp(B, CAMERAS[0].pos, CAMERAS[0].look);
   B.finish(world.scene);
+  world.addInteractable({
+    pos: new THREE.Vector3(-8.05, 1.55, 6.3), size: [0.8, 0.6, 0.3], zone: 'gate',
+    label: () => 'READ NOTICE',
+    inspect: { camPos: new THREE.Vector3(-8.05, 1.55, 6.95), lookAt: new THREE.Vector3(-8.05, 1.55, 6.16), fov: 46, res: 2.4, buttons: [], hint: 'SOP 7C-4' },
+  });
 
   return {
     update(dt, t, s) {
@@ -264,4 +272,33 @@ export function buildGate(world) {
       for (const b of buttons) if (b.userData.t > 0) { b.userData.t -= dt; if (b.userData.t <= 0) b.position.z = b.userData.base; }
     },
   };
+}
+
+// SOP 7C-4: a laminated procedure sheet, slightly faded, drawn as a small flowchart
+function drawSop(c, w, h) {
+  c.fillStyle = '#e4ddc6'; c.fillRect(0, 0, w, h);
+  c.fillStyle = '#2b3a55'; c.fillRect(0, 0, w, 62);
+  c.fillStyle = '#efe8d2'; c.font = '900 30px "Arial Black", sans-serif'; c.textBaseline = 'middle';
+  c.fillText('SOP 7C-4', 22, 31);
+  c.font = '700 20px Arial, sans-serif'; c.fillText('SERVICE ENTRY — CHECK DIGIT', 230, 32);
+  c.fillStyle = '#1c1c1c'; c.strokeStyle = '#1c1c1c'; c.lineWidth = 3;
+  const t = (s, x, y, size = 21, wgt = 700, al = 'left') => { c.font = `${wgt} ${size}px Arial, sans-serif`; c.textAlign = al; c.fillText(s, x, y); c.textAlign = 'left'; };
+  t('D1 D2 D3 = THE FIRST THREE DIGITS (FROM CONTROL, TABLE 7C-1)', 22, 92, 19, 700);
+  // flow
+  c.strokeRect(210, 116, 300, 50); t('LAST DIGIT OF THE PLATE', 360, 133, 19, 700, 'center'); t('SERIAL (KX-####) ODD?', 360, 153, 19, 700, 'center');
+  c.beginPath(); c.moveTo(210, 141); c.lineTo(110, 141); c.lineTo(110, 200); c.moveTo(510, 141); c.lineTo(610, 141); c.lineTo(610, 200); c.stroke();
+  const head = (x, y) => { c.beginPath(); c.moveTo(x - 9, y - 14); c.lineTo(x + 9, y - 14); c.lineTo(x, y); c.fill(); };
+  head(110, 204); head(610, 204);
+  t('YES', 122, 178, 20, 900); t('NO', 622, 178, 20, 900);
+  c.strokeRect(22, 208, 300, 76); t('C = (D1 × D3 + D2)', 172, 236, 24, 900, 'center'); t('MOD 10', 172, 266, 22, 900, 'center');
+  c.strokeRect(398, 208, 300, 76); t('C = (D1 + D2 + D3)', 548, 236, 24, 900, 'center'); t('MOD 10', 548, 266, 22, 900, 'center');
+  c.beginPath(); c.moveTo(172, 284); c.lineTo(172, 318); c.lineTo(548, 318); c.lineTo(548, 284); c.moveTo(360, 318); c.lineTo(360, 342); c.stroke(); head(360, 350);
+  c.strokeRect(150, 352, 420, 56); t('KEY IN  D1 D2 D3 C  →  ENT', 360, 380, 25, 900, 'center');
+  t('MOD 10 = THE LAST DIGIT OF THE ANSWER.   E.G. 4 × 2 + 7 = 15 → 5', 22, 436, 18, 400);
+  t('A WRONG CODE RAISES THE ALARM.', 22, 462, 18, 700);
+  c.save(); c.translate(470, 486); c.rotate(-0.06); c.fillStyle = '#1d3f9a'; c.font = 'italic 700 22px "Comic Sans MS", "Bradley Hand", cursive'; c.fillText('do the maths twice', 0, 0); c.restore();
+  // fade and pin
+  const g = c.createLinearGradient(0, 0, w, h); g.addColorStop(0, 'rgba(120,100,60,0)'); g.addColorStop(1, 'rgba(120,100,60,0.18)');
+  c.fillStyle = g; c.fillRect(0, 0, w, h);
+  c.fillStyle = '#b02a20'; c.beginPath(); c.arc(w / 2, 12, 8, 0, 7); c.fill();
 }

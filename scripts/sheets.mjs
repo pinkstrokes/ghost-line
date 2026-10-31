@@ -11,7 +11,7 @@ const dir = fs.readdirSync(cache).filter((d) => d.startsWith('chromium-')).sort(
 const exe = path.join(cache, dir, 'chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing');
 const browser = await chromium.launch({ executablePath: exe });
 const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
-await page.goto(`http://localhost:5233/blueprint.html?seed=${seed}`);
+await page.goto(`${process.env.BASE || "http://localhost:5233"}/blueprint.html?seed=${seed}`);
 await page.waitForFunction(() => document.querySelectorAll('canvas.sheet').length === 7, null, { timeout: 30000 });
 fs.mkdirSync(outDir, { recursive: true });
 const shots = await page.evaluate(({ idx, crop }) => {

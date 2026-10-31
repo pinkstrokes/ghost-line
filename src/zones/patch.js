@@ -138,6 +138,14 @@ export function buildPatch(world) {
     buttons.push(hit);
     hooks.push(hit);
   }));
+  // continuity lamps: one per cable, lit by the last breaker test (green = that cable is right)
+  const testLamps = COLORS.map((col, ci) => {
+    const p = hookPos(ci, 0).clone().lerp(hookPos(ci, 1), 0.5).add(new THREE.Vector3(-0.01, 0.13, 0));
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), new THREE.MeshBasicMaterial({ color: 0x1a1a1a }));
+    m.position.copy(p);
+    group.add(m);
+    return m;
+  });
   // plugs
   const tagTex = (txt, col) => {
     const cv = Object.assign(document.createElement('canvas'), { width: 64, height: 32 });
@@ -297,6 +305,10 @@ export function buildPatch(world) {
       meters.forEach((n, i) => { n.rotation.x = on ? -0.9 + powerT * 1.4 + Math.sin(t * 3 + i) * 0.03 : -0.9; });
       lever.rotation.x = on ? -2.6 : 0;
       lamp.material.color.setHex(on ? 0x40ff70 : st && st.fault > 0 && (t * 2) % 1 < 0.5 ? 0xff3020 : 0x401010);
+      COLORS.forEach((col, i) => {
+        const r = on ? 1 : st?.test?.[col];
+        testLamps[i].material.color.setHex(r === 1 ? 0x40ff70 : r === 0 ? 0xff3020 : 0x1a1a1a);
+      });
       // sparks
       if (sparkT > 0) {
         sparkT -= dt;

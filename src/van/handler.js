@@ -431,7 +431,7 @@ export class HandlerView {
   focusPose(id) {
     if (id === 'monitors') return { pos: new THREE.Vector3(0, 1.08, 0.12), look: new THREE.Vector3(0, 1.08, -0.55), fov: 62, h: Math.max(this.settings.pixel, 540) };
     if (id === 'terminal') return { pos: this.termFocus.pos, look: this.termFocus.look, fov: 50, h: Math.max(this.settings.pixel, 720) };
-    if (id === 'cipher') return { pos: this.cipher.pos.clone().add(new THREE.Vector3(0, 0.42, 0.12)), look: this.cipher.pos, fov: 50, h: Math.max(this.settings.pixel, 720) };
+    if (id === 'cipher') return { pos: this.cipher.pos.clone().add(new THREE.Vector3(0, 0.55, 0.03)), look: this.cipher.pos, fov: 46, h: Math.max(this.settings.pixel, 720) };
     return null;
   }
 
@@ -449,11 +449,11 @@ export class HandlerView {
     this.hud.crosshair(false);
     this.hud.prompt('');
     const hints = {
-      monitors: '1-0 CAMERA · I INFRA-RED · ARROWS/DRAG PAN-TILT · WHEEL ZOOM · CLICK A SMALL SCREEN TO SWAP · P PIN',
+      monitors: '1–0 CAMERA · I IR · DRAG/ARROWS AIM · WHEEL ZOOM · CLICK SIDE SCREEN TO SWAP · P PIN',
       terminal: 'TYPE COMMANDS · ENTER RUNS · F1-F6, [ ] OR CLICK A TAB TO SWITCH',
       cipher: 'DRAG OR ← → TO TURN THE INNER DISC',
     };
-    this.hud.setInspect(hints[id], true);
+    this.hud.setInspect(hints[id], true, 'RIGHT-CLICK / [ESC] SIT BACK');
     if (id === 'terminal') {
       const cap = (e) => {
         if (e.type !== 'keydown') return false;
@@ -481,13 +481,24 @@ export class HandlerView {
 
   // ------------------------------------------------------------------ events
   onEvent(e) {
+    if (e.k === 'gateWarn') this.hud.toast('GHOST: CODE INVALID — the next wrong code trips the alarm', 'bad');
     if (e.k === 'strike') {
       this.flashT = 1;
       sfx.strike();
       this.hud.toast(`ALERT ${e.n} — ${e.reason}`, 'bad');
       for (const m of this.monitors) m.glitch = 0.8;
       this.world.avatar.alarm = 2;
+      // cut the main monitor to the nearest camera on that zone for a few seconds, so LINE sees it happen
+      const p = this.pose();
+      const cams = CAMERAS.map((c, i) => ({ c, i })).filter(({ c }) => c.zone === e.zone);
+      if (cams.length && p) {
+        cams.sort((a, b) => Math.hypot(a.c.pos[0] - p[0], a.c.pos[2] - p[2]) - Math.hypot(b.c.pos[0] - p[0], b.c.pos[2] - p[2]));
+        const idx = cams[0].i;
+        if (idx !== this.mainIdx) { this.cut = { prev: this.cut?.prev ?? this.mainIdx, idx, t: 3.5 }; this.mainIdx = idx; sfx.static(0.15, 0.04); }
+      }
     }
+    if (e.k === 'sfx' && e.name === 'caught') { sfx.static(0.7, 0.16); for (const m of this.monitors) m.glitch = 1; }
+    if (e.k === 'stalker') { sfx.static(0.3, 0.06); this.hud.toast('THERMAL: COLD SHAPE BEHIND GHOST — IT HEARS THE RADIO', 'bad'); }
     if (e.k === 'lockdown') { sfx.lockdown(); this.hud.toast('LOCKDOWN — open OVERRIDE in the terminal', 'bad'); this.flashT = 1; }
     if (e.k === 'sfx' && e.name === 'granted') sfx.granted();
     if (e.k === 'spark') this.world.onSpark?.();
@@ -522,6 +533,10 @@ export class HandlerView {
       if (!this.pinned) this.slots = (RELEVANT[s.objective] || RELEVANT.gate).map((id) => CAMERAS.findIndex((c) => c.id === id));
       const rel = RELEVANT[s.objective];
       if (rel && !this.pinned) this.mainIdx = CAMERAS.findIndex((c) => c.id === rel[0]);
+    }
+    if (this.cut && (this.cut.t -= dt) <= 0) {
+      if (this.mainIdx === this.cut.idx) this.mainIdx = this.cut.prev;
+      this.cut = null;
     }
     // GHOST avatar + flashlight in the facility
     const p = this.pose();
@@ -623,7 +638,7 @@ export class HandlerView {
     const I = this.input;
     const main = this.cctv.cams[this.mainIdx];
     for (let k = 0; k < 10; k++) {
-      if (I.hit(`Digit${(k + 1) % 10}`) || I.hit(`Numpad${(k + 1) % 10}`)) { this.mainIdx = k; sfx.click(0.1); sfx.static(0.15, 0.04); }
+      if (I.hit(`Digit${(k + 1) % 10}`) || I.hit(`Numpad${(k + 1) % 10}`)) { this.mainIdx = k; this.cut = null; sfx.click(0.1); sfx.static(0.15, 0.04); }
     }
     if (I.hit('KeyI')) {
       if (main.def.ir) { main.ir = !main.ir; sfx.click(0.12); } else this.hud.toast(`${main.def.id} has no infra-red`, '');
@@ -648,6 +663,7 @@ export class HandlerView {
       const prev = this.mainIdx;
       this.mainIdx = this.slots[mon.slot];
       this.slots[mon.slot] = prev;
+      this.cut = null;
       sfx.click(0.1);
     }
   }

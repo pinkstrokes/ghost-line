@@ -54,7 +54,7 @@ export class BlueprintView {
     this.layer.querySelector('[data-t=close]').addEventListener('click', () => this.onClose());
     const cv = this.canvas;
     cv.addEventListener('mousedown', (e) => {
-      this.drag = { x: e.clientX, y: e.clientY, draw: e.shiftKey || this.pencil || e.button === 2 };
+      this.drag = { x: e.clientX, y: e.clientY, draw: e.shiftKey || this.pencil };
       if (this.drag.draw) { this.cur = { pts: [this.toSheet(e.clientX, e.clientY)], w: 0.55 }; this.strokes[this.sheet].push(this.cur); }
       e.preventDefault();
     });
