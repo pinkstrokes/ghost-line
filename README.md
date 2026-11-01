@@ -1,5 +1,9 @@
 # GHOST LINE
 
+![GHOST LINE](docs/screens/og.png)
+
+**Play: https://us.pinkstrokes.com**
+
 A two-player voice co-op infiltration game. One player is **GHOST**, sneaking through the abandoned secret facility KESTREL-9 in first person. The other is **LINE**, sitting in a surveillance van (also in first person) with the facility blueprints, tapped CCTV cameras, a terminal patched into the building's control system and a paper cipher wheel.
 
 GHOST can see every detail of the security systems but doesn't know how to beat them. LINE knows how, and can see what GHOST can't (infra-red lasers, light beams, thermal imaging, motion sensors), but can't move. You have to talk your way through every zone.
