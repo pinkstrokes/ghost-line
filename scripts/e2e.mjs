@@ -71,6 +71,8 @@ try {
     await A.keyboard.up('v');
     console.log(`  push-to-talk seen by LINE: ${rx}`);
     console.log(`  voice connected both ways; LINE hears GHOST at level ${lv.toFixed(3)} (fake mic tone)`);
+    await sleep(1500);
+    console.log(`  voice route: GHOST ${await A.evaluate(() => __gl.voice?.route || window.__gl?.app?.voice?.route || '?')}`);
   } catch (e) { console.log(`  ⚠ voice: ${e.message}`); }
 
   step('Z1 gatehouse: one wrong code, then the right one');

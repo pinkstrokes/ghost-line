@@ -354,7 +354,8 @@ function lobbyRadio() {
     last = now;
     input.endFrame();
     const st = document.getElementById('radioState');
-    if (st) st.textContent = !app.voice.connected ? 'Mic ready · waiting for partner to press RADIO CHECK' : app.voice.inLevel > 0.02 ? 'Link up · hearing partner' : 'Link up · lobby is an open channel, just talk';
+    const route = { LAN: ' · direct (same network)', DIRECT: ' · direct', RELAY: ' · via relay server' }[app.voice.route] || '';
+    if (st) st.textContent = !app.voice.connected ? 'Mic ready · waiting for partner to press RADIO CHECK' : (app.voice.inLevel > 0.02 ? 'Link up · hearing partner' : 'Link up · lobby is an open channel, just talk') + route;
   };
   lobbyRaf = requestAnimationFrame(tick);
 }

@@ -50,7 +50,7 @@ export class Hud {
     this.lastRadio = state;
     const el = this.$('radio');
     el.className = state;
-    el.querySelector('.lbl').textContent = state === 'tx' ? 'TX  ·  TALKING' : state === 'rx' ? 'RX  ·  INCOMING' : state === 'off' ? 'RADIO OFF' : (this.openMic ? 'RADIO  ·  OPEN MIC' : `RADIO  [${this.pttLabel || 'V'}]`);
+    el.querySelector('.lbl').textContent = state === 'tx' ? 'TX  ·  TALKING' : state === 'rx' ? 'RX  ·  INCOMING' : state === 'off' ? 'RADIO OFF' : (this.openMic ? 'RADIO  ·  OPEN MIC' : `RADIO  [${this.pttLabel || 'V'}]`) + (this.radioRoute ? `  ·  ${this.radioRoute}` : '');
   }
   scare() {
     const el = this.$('scare');

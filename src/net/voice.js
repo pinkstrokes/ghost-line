@@ -112,6 +112,22 @@ export class Voice {
     else if (!this.pc || dead || age > 32000) this.hello();
   }
 
+  // Which path the audio took: LAN (host candidates), DIRECT (hole-punched over the internet) or
+  // RELAY (bounced through our TURN server, only when a direct path can't be made).
+  async checkRoute(pc) {
+    try {
+      const stats = await pc.getStats();
+      let pair = null;
+      stats.forEach((r) => { if (r.type === 'transport' && r.selectedCandidatePairId) pair = stats.get(r.selectedCandidatePairId); });
+      if (!pair) stats.forEach((r) => { if (r.type === 'candidate-pair' && r.nominated && r.state === 'succeeded') pair = r; });
+      const loc = pair && stats.get(pair.localCandidateId), rem = pair && stats.get(pair.remoteCandidateId);
+      if (!loc || this.pc !== pc) return;
+      const relay = loc.candidateType === 'relay' || rem?.candidateType === 'relay';
+      this.route = relay ? 'RELAY' : loc.candidateType === 'host' && rem?.candidateType === 'host' ? 'LAN' : 'DIRECT';
+      if (this.hud) this.hud.radioRoute = this.route, this.hud.radio();
+    } catch { /* stats are best-effort */ }
+  }
+
   makePeer(sid) {
     this.closePeer();
     const pc = (this.pc = new RTCPeerConnection({ iceServers: Voice.iceServers }));
@@ -123,6 +139,7 @@ export class Voice {
       if (this.pc !== pc) return;
       (this.dbg ||= []).push(`${Math.round(performance.now())} state ${pc.connectionState} ice=${pc.iceConnectionState}`);
       this.connected = pc.connectionState === 'connected';
+      if (this.connected) this.checkRoute(pc); else this.route = '';
       if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
         this.closePeer();
         setTimeout(() => this.ensurePeer(), 2000);
