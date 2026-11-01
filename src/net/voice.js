@@ -242,7 +242,8 @@ export class Voice {
       // V, or (LINE only) Option/Alt, which keeps working while typing in the terminal.
       // GHOST doesn't get Alt: on Windows Alt+D/E/F are browser shortcuts.
       const alt = this.role === 'handler' && (input.down('AltLeft') || input.down('AltRight'));
-      const want = (input.down('KeyV') && !(input.textCapture && input.textCapture.active)) || alt;
+      // in the lobby the radio is an open channel, so a radio check actually lets you hear each other
+      const want = this.lobbyOpen || (input.down('KeyV') && !(input.textCapture && input.textCapture.active)) || alt;
       this.setTx(want);
     }
     const lv = this.track && this.track.enabled ? this.rms(this.micAn) : 0;

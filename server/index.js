@@ -31,7 +31,11 @@ function iceConfig() {
   if (!urls.length || !process.env.TURN_SECRET) return { iceServers: [] };
   const username = `${Math.floor(Date.now() / 1000) + 12 * 3600}:ghostline`;
   const credential = crypto.createHmac('sha1', process.env.TURN_SECRET).update(username).digest('base64');
-  return { iceServers: [{ urls, username, credential }] };
+  // plain STUN on the same coturn first: without it browsers only get host + relay candidates, so every
+  // internet call bounced through the relay in Oregon (the voice delay testers heard). The relay is now
+  // only the fallback when a direct path can't be punched.
+  const stun = [...new Set(urls.map((u) => u.replace(/^turns?:/, 'stun:').replace(/\?.*$/, '')))];
+  return { iceServers: [{ urls: stun }, { urls, username, credential }] };
 }
 
 function serveStatic(req, res) {

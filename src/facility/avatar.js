@@ -109,10 +109,9 @@ export class Avatar {
     this.torch = torch;
     // visible light cone for CCTV
     const coneGeo = new THREE.ConeGeometry(1.1, 4.2, 10, 1, true);
-    coneGeo.translate(0, -2.1, 0);
-    coneGeo.rotateX(-Math.PI / 2);
+    coneGeo.translate(0, -2.1, 0); // apex at the hand, opening along the arm (-y), which points where GHOST looks
     this.cone = new THREE.Mesh(coneGeo, new THREE.MeshBasicMaterial({ color: 0xfff1c8, transparent: true, opacity: 0.06, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: true }));
-    this.cone.position.set(0, -0.45, 0.26);
+    this.cone.position.set(0, -0.5, 0.12);
     this.arms[1].add(this.cone);
     // the torch's IR illuminator: a faint cone on the IR layer so LINE can see GHOST's heading in IR mode
     this.coneIR = new THREE.Mesh(coneGeo, new THREE.MeshBasicMaterial({ color: 0x9a9a9a, transparent: true, opacity: 0.16, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false }));
@@ -164,7 +163,8 @@ export class Avatar {
     const sp = Math.hypot(dx, dz) / Math.max(dt, 1e-3);
     this.speed += (Math.min(sp, 6) - this.speed) * Math.min(1, dt * 8);
     g.position.set(x, y, z);
-    let dy = yaw - g.rotation.y;
+    // the model is built facing +z, GHOST's view faces -z at yaw 0: turn it round
+    let dy = yaw + Math.PI - g.rotation.y;
     while (dy > Math.PI) dy -= Math.PI * 2;
     while (dy < -Math.PI) dy += Math.PI * 2;
     g.rotation.y += dy * Math.min(1, dt * 12);

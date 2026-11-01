@@ -170,7 +170,7 @@ export function buildPatch(world) {
     g.add(hit);
     world.makeButton(hit, { kind: 'plug', color: col, end });
     buttons.push(hit);
-    plugs[`${col}${end}`] = { g, body, target: new THREE.Vector3(), pos: new THREE.Vector3(), col, end };
+    plugs[`${col}${end}`] = { g, body, hit, target: new THREE.Vector3(), pos: new THREE.Vector3(), col, end };
   }));
   const cables = {};
   COLORS.forEach((col) => {
@@ -216,7 +216,16 @@ export function buildPatch(world) {
   const sparkLight = { x: FX - 0.3, y: 1.4, z: ZC, color: 0xffc070, intensity: 0, distance: 5, room: 'patch', on: true, decay: 1.5, mult: 1 };
   world.lightAnchors.push(sparkLight);
 
-  let held = null;
+  // an invisible board over the whole frame: the held plug follows the cursor anywhere on it
+  // (before, it only tracked the cursor over a socket and snapped home in between)
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 2.4), new THREE.MeshBasicMaterial({ visible: false }));
+  board.rotation.y = -Math.PI / 2;
+  board.position.set(FX + 0.02, 1.25, ZC);
+  group.add(board);
+  world.makeButton(board, { kind: 'board' });
+  buttons.push(board);
+
+  let held = null, dragFrom = null;
   const placeOf = (key, s) => {
     const sock = s?.patch?.plugs?.[key];
     if (sock) return sockPos(sock).add(new THREE.Vector3(-0.07, 0, 0));
@@ -232,14 +241,25 @@ export function buildPatch(world) {
     inspect: {
       camPos: new THREE.Vector3(FX - 1.6, 1.3, ZC), lookAt: new THREE.Vector3(FX, 1.24, ZC), fov: 60,
       buttons,
-      hint: 'CLICK A PLUG TO PICK IT UP · CLICK A SOCKET TO PLUG IN · CLICK A HOOK TO HANG IT BACK',
-      onExit: () => { held = null; },
+      hint: 'DRAG A PLUG ONTO A SOCKET (OR CLICK PLUG, THEN SOCKET) · DROP IT ON A HOOK TO HANG IT BACK',
+      onExit: () => { held = null; dragFrom = null; },
       onHover: (btn, hit) => { cursorPoint = hit ? hit.point.clone() : null; },
-      onButton: (btn) => {
+      // drag-and-drop as well as click-click: let go over a socket or hook to drop the plug there
+      onRelease: (btn) => {
+        const from = dragFrom; dragFrom = null;
+        if (!held || !btn || btn === from) return;
+        const k = btn.userData.button.kind;
+        if (k === 'socket' || k === 'hook') onButton(btn);
+      },
+      onButton: (btn) => onButton(btn),
+    },
+  });
+  function onButton(btn) {
         const s = world.state;
         if (s?.patch?.power) return;
         const d = btn.userData.button;
-        if (d.kind === 'plug') { held = `${d.color}${d.end}`; world.sfx?.click(0.1); return; }
+        if (d.kind === 'board') return;
+        if (d.kind === 'plug') { held = `${d.color}${d.end}`; dragFrom = btn; world.sfx?.click(0.1); return; }
         if (d.kind === 'socket') {
           const occupant = Object.entries(s.patch.plugs).find(([, v]) => v === d.id)?.[0];
           if (held) {
@@ -247,7 +267,7 @@ export function buildPatch(world) {
             world.act({ k: 'plug', color: held.slice(0, -1), end: +held.slice(-1), socket: d.id });
             world.sfx?.plug(sockPos(d.id));
             held = null;
-          } else if (occupant) { held = occupant; world.sfx?.click(0.1); }
+          } else if (occupant) { held = occupant; dragFrom = btn; world.sfx?.click(0.1); }
           return;
         }
         if (d.kind === 'hook' && held) {
@@ -255,9 +275,7 @@ export function buildPatch(world) {
           world.sfx?.click(0.08);
           held = null;
         }
-      },
-    },
-  });
+  }
 
   world.net?.on?.('ev', () => {});
   const onSpark = () => {
@@ -279,6 +297,8 @@ export function buildPatch(world) {
       // plug targets
       let moving = false;
       for (const [k, p] of Object.entries(plugs)) {
+        // the plug in hand must not catch the pointer ray itself (it sits right under the cursor)
+        p.hit.layers.set(held === k ? 31 : 5);
         let target = placeOf(k, s);
         if (held === k && cursorPoint) target = cursorPoint.clone().add(new THREE.Vector3(-0.12, 0, 0));
         else if (held === k) target = target.clone().add(new THREE.Vector3(-0.15, 0.05, 0));

@@ -182,7 +182,7 @@ export class AgentView {
     const I = this.input, s = this.world.state, now = this.net.serverNow();
     const playing = s?.phase === 'playing';
     if (this.keysT > 0 && (this.keysT -= dt) <= 0) this.hud.keys('');
-    if (I.hit('F1')) { this.keysT = 20; this.hud.keys('<kbd>WASD</kbd> move <kbd>Shift</kbd> run <kbd>C</kbd> crouch <kbd>Space</kbd> jump<br><kbd>E</kbd> inspect / use <kbd>Q</kbd> turn mirror back <kbd>F</kbd> torch <kbd>Tab</kbd> watch<br>hold <kbd>V</kbd> to talk'); }
+    if (I.hit('F1')) { const o = OBJECTIVES[this.world.state?.objective]; if (o) this.hud.objective(o.agent); this.keysT = 20; this.hud.keys('<kbd>WASD</kbd> move <kbd>Shift</kbd> run <kbd>C</kbd> crouch <kbd>Space</kbd> jump<br><kbd>E</kbd> inspect / use <kbd>Q</kbd> turn mirror back <kbd>F</kbd> torch <kbd>Tab</kbd> watch<br>hold <kbd>V</kbd> to talk · <kbd>F1</kbd> task again'); }
     if (this.lastObjective !== s?.objective && playing) {
       this.lastObjective = s.objective;
       const o = OBJECTIVES[s.objective];
@@ -356,9 +356,10 @@ export class AgentView {
     rc.setFromCamera(ndc, this.cam);
     const hit = rc.intersectObjects(insp.buttons || [], false)[0];
     const btn = hit?.object;
-    this.hud.cursor(btn ? 'pointer' : 'default');
+    this.hud.cursor(btn && btn.userData.button?.kind !== 'board' ? 'pointer' : 'default');
     if (insp.onHover) insp.onHover(btn, hit);
     if (I.mouse.clicked && btn && insp.onButton) insp.onButton(btn, hit);
+    if (I.mouse.released && insp.onRelease) insp.onRelease(btn, hit);
   }
 
   render(t) {

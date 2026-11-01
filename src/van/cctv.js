@@ -116,11 +116,12 @@ export class CCTV {
     cam.updateMatrixWorld();
   }
 
+  // every camera has (digital) zoom; only PTZ mounts pan and tilt. False = tried to aim a fixed one.
   ptz(c, dPan, dTilt, dZoom) {
-    if (!c.def.ptz) return false;
+    c.zoom = Math.max(1, Math.min(3.5, c.zoom * dZoom));
+    if (!c.def.ptz) return !(dPan || dTilt);
     c.pan = Math.max(-0.9, Math.min(0.9, c.pan + dPan));
     c.tilt = Math.max(-0.5, Math.min(0.45, c.tilt + dTilt));
-    c.zoom = Math.max(1, Math.min(2.6, c.zoom * dZoom));
     return true;
   }
 

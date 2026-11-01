@@ -40,7 +40,7 @@ export class HandlerView {
     this.slots = RELEVANT.gate.map((id) => CAMERAS.findIndex((c) => c.id === id));
     this.pinned = false;
     this.terminal = new Terminal({ net, world, sfx });
-    this.blueprint = new BlueprintView({ mission: world.mission, input, sfx, onClose: () => this.unfocus() });
+    this.blueprint = new BlueprintView({ mission: world.mission, input, sfx, onClose: () => this.closeBlueprint() });
     this.buildVan();
     this.unsub = [
       net.on('pose', (m) => this.poses.push({ t: performance.now(), p: m.p })),
@@ -458,7 +458,7 @@ export class HandlerView {
       const cap = (e) => {
         if (e.type !== 'keydown') return false;
         if (e.code === 'Escape') { this.unfocus(); return true; }
-        if (e.code === 'Tab') { this.unfocus(); this.setFocus('blueprint'); return true; }
+        if (e.code === 'Tab') { this.openBlueprint(); return true; }
         if (e.code === 'KeyV' && this.voice && this.settings.ptt === 'hold' && this.terminal.input === '' && false) return false;
         return this.terminal.key(e);
       };
@@ -467,11 +467,27 @@ export class HandlerView {
     }
   }
 
-  unfocus() {
+  // Blueprints open over whatever station LINE is at and close back to it. Switching never
+  // re-locks the pointer in between (a lock request lands after the unlock and traps the mouse).
+  openBlueprint() {
+    if (this.focus === 'blueprint') return;
+    this.bpReturn = this.focus;
+    if (this.focus) this.unfocus(false);
+    this.setFocus('blueprint');
+  }
+  closeBlueprint() {
+    const back = this.bpReturn;
+    this.bpReturn = null;
+    this.unfocus(!back);
+    if (back) this.setFocus(back);
+  }
+
+  unfocus(relock = true) {
     if (this.focus === 'blueprint') this.blueprint.close();
     this.input.textCapture = null;
     this.focus = null;
     this.wantsCursor = false;
+    if (!relock) { this.hud.setInspect('', false); return; }
     this.tween = { t: 0, fromPos: this.cam.position.clone(), fromQ: this.cam.quaternion.clone(), toPos: SEAT.clone(), toQ: null, fromFov: this.cam.fov, toFov: this.settings.fov };
     this.engine.setTargetHeight(this.settings.pixel);
     this.hud.setInspect('', false);
@@ -525,7 +541,7 @@ export class HandlerView {
   update(dt, t) {
     const I = this.input, s = this.world.state, now = this.net.serverNow();
     if (this.keysT > 0 && (this.keysT -= dt) <= 0) this.hud.keys('');
-    if (I.hit('F1') && this.focus !== 'terminal') { this.keysT = 20; this.hud.keys(this.keyHelp); }
+    if (I.hit('F1') && this.focus !== 'terminal') { const o = OBJECTIVES[this.world.state?.objective]; if (o) this.hud.objective(o.handler); this.keysT = 20; this.hud.keys(this.keyHelp); }
     if (s && this.lastObjective !== s.objective && s.phase === 'playing') {
       this.lastObjective = s.objective;
       const o = OBJECTIVES[s.objective];
@@ -579,7 +595,7 @@ export class HandlerView {
 
     // quick keys
     if (this.focus !== 'terminal') {
-      if (I.hit('Tab')) { if (this.focus === 'blueprint') this.unfocus(); else { if (this.focus) this.unfocus(); this.setFocus('blueprint'); } }
+      if (I.hit('Tab')) { if (this.focus === 'blueprint') this.closeBlueprint(); else this.openBlueprint(); }
       if (!this.focus && I.hit('KeyM')) this.setFocus('monitors');
       if (!this.focus && I.hit('KeyT')) this.setFocus('terminal');
     }
@@ -656,7 +672,7 @@ export class HandlerView {
     let dPan = pan * dt * 0.8, dTilt = tilt * dt * 0.6;
     if (I.mouse.down && mon?.slot === 'main' && !I.mouse.clicked) { dPan += I.mouse.dx * 0.003; dTilt += I.mouse.dy * 0.003; }
     if ((dPan || dTilt || z !== 1) && !this.cctv.ptz(main, dPan, dTilt, z) && (pan || tilt || I.mouse.wheel)) {
-      if (!this.ptzWarned) { this.hud.toast(`${main.def.id} is a fixed camera`, ''); this.ptzWarned = true; }
+      if (!this.ptzWarned) { this.hud.toast(`${main.def.id} is a fixed camera — zoom only`, ''); this.ptzWarned = true; }
     }
     this.hud.cursor(mon && mon.slot !== 'main' ? 'pointer' : mon ? 'grab' : 'default');
     if (I.mouse.clicked && mon && mon.slot !== 'main') {

@@ -8,7 +8,7 @@ import { Hud } from './ui/hud.js';
 import { sfx } from './audio/sfx.js';
 import { generateMission } from '../shared/mission.js';
 import { DIFFICULTY } from '../shared/layout.js';
-import { fmtTime, ZONE_TITLES, parFor, fmtDelta } from './ui/text.js';
+import { fmtTime, ZONE_TITLES, parFor, fmtDelta, OBJECTIVES } from './ui/text.js';
 import { TitleScene } from './ui/title-scene.js';
 
 const $overlay = document.getElementById('overlay');
@@ -330,11 +330,33 @@ function lobbyScreen() {
   on('#radioCheck', 'click', async () => {
     ensureVoice();
     const ok = await app.voice.enable();
-    $overlay.querySelector('#radioState').textContent = ok ? (app.voice.connected ? (settings.ptt === 'open' ? 'Link up · open mic' : 'Link up · hold V to talk') : 'Mic ready · waiting for partner') : 'No microphone access (Discord works too)';
+    if (!ok) { $overlay.querySelector('#radioState').textContent = 'No microphone access (Discord works too)'; return; }
+    app.voice.onLevel = (v) => { const el = document.getElementById('lvl'); if (el) el.style.width = `${Math.min(100, v * 300)}%`; };
+    lobbyRadio();
   });
   if (app.voice) {
     app.voice.onLevel = (v) => { const el = document.getElementById('lvl'); if (el) el.style.width = `${Math.min(100, v * 300)}%`; };
+    if (app.voice.stream) lobbyRadio();
   }
+}
+
+// The game loop drives the radio in a mission; in the lobby this small loop does, and the lobby is an
+// open channel (no push-to-talk) so both players can actually hear each other during a radio check.
+let lobbyRaf = 0;
+function lobbyRadio() {
+  if (lobbyRaf || settings.ptt === 'off') return;
+  let last = performance.now();
+  const tick = (now) => {
+    if (app.game || app.state?.phase !== 'lobby' || !app.voice) { lobbyRaf = 0; if (app.voice) app.voice.lobbyOpen = false; return; }
+    lobbyRaf = requestAnimationFrame(tick);
+    app.voice.lobbyOpen = true;
+    app.voice.update(Math.min(0.05, (now - last) / 1000), input);
+    last = now;
+    input.endFrame();
+    const st = document.getElementById('radioState');
+    if (st) st.textContent = !app.voice.connected ? 'Mic ready · waiting for partner to press RADIO CHECK' : app.voice.inLevel > 0.02 ? 'Link up · hearing partner' : 'Link up · lobby is an open channel, just talk';
+  };
+  lobbyRaf = requestAnimationFrame(tick);
 }
 
 function ensureVoice() {
@@ -473,6 +495,7 @@ function pauseMenu() {
   if ($overlay.innerHTML) return;
   html(`<div class="screen"><div class="card">
     <h2 class="title" style="font-size:40px">PAUSED</h2><p class="hint">The game doesn't actually pause — the clock keeps running.</p>
+    ${(() => { const s = app.state, o = OBJECTIVES[s?.objective]; return o ? `<div class="pause-obj"><label>${esc(ZONE_TITLES[s.objective] || '')} · YOUR JOB</label><p>${esc(app.role === 'agent' ? o.agent : o.handler)}</p></div>` : ''; })()}
     <div class="col"><button class="primary" id="resume">RESUME</button><button id="settings">SETTINGS</button><button id="howto">HOW TO PLAY</button><button id="abort">ABORT MISSION (BACK TO LOBBY)</button></div>
   </div></div>`);
   on('#resume', 'click', () => { html(''); input.lock(); });

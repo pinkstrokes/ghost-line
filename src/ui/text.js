@@ -32,8 +32,8 @@ export const OBJECTIVES = {
   },
   vault: {
     short: 'CRACK VAULT',
-    agent: 'Read LINE the vault\'s model plate. Spin the dial the way LINE says — it drags near every gate. Call out the numbers there, press SET when told.',
-    handler: 'Look the model up on blueprint V-1: wheel directions and the true-gate signature. Watch ACOUSTIC in the terminal while GHOST calls numbers.',
+    agent: 'Read LINE the vault\'s model plate. Spin the dial the way LINE says, all the way round — it drags near every gate. LINE tells you which number is real: dial to it, SPACE to SET. Three wheels, then H.',
+    handler: 'Look the model up on blueprint V-1: wheel directions and the true-gate shape. On ACOUSTIC (terminal F5) every gate is stamped with its dial number — find the right shape, send GHOST to that number, SET.',
   },
   escape: {
     short: 'ESCAPE',

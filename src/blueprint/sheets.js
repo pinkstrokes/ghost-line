@@ -614,14 +614,14 @@ function vault(ctx, m) {
   [
     '1. READ THE MODEL PLATE. FIND THE MODEL IN TABLE V-1.',
     '2. WHEEL 1: SPIN THE DIAL IN WHEEL 1\'S DIRECTION UNTIL THE OPERATOR FEELS IT DRAG. EVERY GATE DRAGS — TRUE OR FALSE.',
-    '3. AT EACH DRAG, STEP ONE NUMBER AT A TIME. WHEN THE TRUE GATE SIGNATURE APPEARS, THAT NUMBER IS THE GATE. PRESS [SET].',
+    '3. THE BMS STAMPS EACH GATE SIGNATURE WITH THE DIAL NUMBER. THE ONE SHAPED LIKE YOUR MODEL\'S TRUE GATE IS IT: DIAL BACK TO IT, [SET].',
     m.diff?.key === 'ghost' ? '4. δ = CAPTURED, CONTINUE WITH THE NEXT WHEEL.   ε = SLIPPED, START AGAIN FROM WHEEL 1.'
       : '4. δ = CAPTURED, CONTINUE WITH THE NEXT WHEEL.   ε = SLIPPED, FIND THIS WHEEL\'S GATE AGAIN.',
     '5. AFTER THREE CAPTURES PULL THE HANDLE.  PULLING EARLY SOUNDS THE TAMPER ALARM.',
   ].forEach((n, i) => label(ctx, n, 30, 404 + i * 8.5, 4, { color: INK2 }));
   hand(ctx, 'which peak is TALLER —\nfirst or second? thats the\nwhole trick with α and β', 640, 190, 8);
   hand(ctx, 'GHOST feels every drag the same.\nonly we can see which is real.', 430, 470, 7.5, { rot: 0.02 });
-  hand(ctx, 'ask for the number AS it ticks.\neach wheel has 3 drags, 1 real', 640, 270, 7.5, { rot: -0.04 });
+  hand(ctx, 'each wheel has 3 drags, 1 real.\nthe scope prints the number\nunder every gate it hears', 640, 270, 7.5, { rot: -0.04 });
   stamp(ctx, 'RESTRICTED', 700, 80, 14, 0.18, rng);
   titleBlock(ctx, { sheet: 'V-1', title: 'VAULT DOOR SERVICE', sub: 'MODELS · SIGNATURES · PROCEDURE', rev: 'D' });
   wear(ctx, rng);

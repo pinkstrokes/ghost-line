@@ -350,7 +350,7 @@ export class Room {
             drag = cands.some((c) => Math.min((v.dial - c + 100) % 100, (c - v.dial + 100) % 100) <= 1);
           }
         }
-        this.event({ k: 'acoustic', sig }, 'handler');
+        this.event({ k: 'acoustic', sig, n: v.dial }, 'handler');
         this.event({ k: 'dial', drag }, 'agent');
         this.broadcast();
         return;

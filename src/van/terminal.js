@@ -31,6 +31,7 @@ export class Terminal {
     this.out = [];
     this.scope = new Float32Array(700);
     this.scopeEvents = [];
+    this.scopeMarks = []; // dial number stamped under each gate signature, scrolling with the trace
     this.scopeAcc = 0;
     this.blink = 0;
     this.dirty = true;
@@ -56,7 +57,13 @@ export class Terminal {
     if (e.k === 'strike') this.addLog(`ALERT ${e.n} — ${e.reason}`, BAD);
     if (e.k === 'gateWarn') this.addLog('ENTRY 7C — INVALID CODE (WARNING)', AMB);
     if (e.k === 'stalker') this.addLog('SPINE THERMAL — UNKNOWN MOVER', BAD);
-    if (e.k === 'acoustic') this.scopeEvents.push({ sig: e.sig, t: performance.now() / 1000, amp: 0.85 + Math.random() * 0.3 });
+    if (e.k === 'acoustic') {
+      this.scopeEvents.push({ sig: e.sig, t: performance.now() / 1000, amp: 0.85 + Math.random() * 0.3 });
+      if (e.n != null && ['alpha', 'beta', 'gamma'].includes(e.sig)) {
+        const prev = this.scopeMarks[this.scopeMarks.length - 1];
+        this.scopeMarks.push({ n: e.n, age: 0, row: prev && prev.age < 30 ? (prev.row + 1) % 3 : 0 }); // stagger close labels
+      }
+    }
     if (e.k === 'deny' && e.what === 'damper') { this.say(`DAMPER ${e.id}: INSUFFICIENT POWER — CLOSE ANOTHER DAMPER FIRST`, BAD); this.sfx.denied(); }
     if (e.k === 'sfx' && e.name === 'granted') this.addLog('ENTRY 7C — ACCESS GRANTED');
     if (e.k === 'sfx' && e.name === 'power') { this.addLog('BREAKER CLOSED — POWER ON'); this.say('BREAKER ENGAGED. LOAD NOMINAL. BULKHEAD C RELEASED.'); }
@@ -171,10 +178,18 @@ export class Terminal {
         if (tau >= 0 && tau < 1.2) v += SIG[ev.sig] ? SIG[ev.sig](tau) * ev.amp : 0;
       }
       this.scope[this.scope.length - 1] = v;
+      for (const m of this.scopeMarks) m.age++;
     }
+    this.scopeMarks = this.scopeMarks.filter((m) => m.age < this.scope.length);
     this.scopeEvents = this.scopeEvents.filter((e) => now - e.t < 1.3);
     const s = this.world.state;
     if (s !== this.lastState) { this.lastState = s; this.dirty = true; }
+    // jump to the program the new zone needs
+    if (s && s.objective !== this.lastObjective) {
+      const want = { patch: 'power', maze: 'vent', vault: 'acoustic', escape: 'override' }[s.objective];
+      if (this.lastObjective && want) this.prog = want;
+      this.lastObjective = s.objective;
+    }
     // animated views redraw at 30 Hz while LINE looks at the terminal, 8 Hz otherwise
     this.animAcc += dt;
     if (['acoustic', 'sensors', 'sys', 'override'].includes(this.prog) && this.animAcc > (this.focused ? 1 / 30 : 1 / 8)) { this.animAcc = 0; this.dirty = true; }
@@ -303,10 +318,16 @@ export class Terminal {
       if (i === 0) c.moveTo(px, py); else c.lineTo(px, py);
     }
     c.stroke();
+    // the dial position each gate signature came from, under the start of its trace
+    for (const m of this.scopeMarks) {
+      const px = x0 + ((n - 1 - m.age) / (n - 1)) * w;
+      c.strokeStyle = GD; c.lineWidth = 1; c.beginPath(); c.moveTo(px, top + h - 30); c.lineTo(px, top + h); c.stroke();
+      this.text(String(m.n).padStart(2, '0'), px + 3, top + h - 12 - m.row * 20, AMB, 18);
+    }
     this.text('-7s', x0, top + h + 22, GD, 16);
     this.text('NOW', x0 + w, top + h + 22, GD, 16, 'right');
     const v = s?.vault;
-    this.text(v?.open ? 'BOLTWORK RETRACTED' : 'LISTENING …  SIGNATURE KEY: DRAWING V-1', 32, top + h + 56, v?.open ? G : GD, 18);
+    this.text(v?.open ? 'BOLTWORK RETRACTED' : 'NUMBERS = DIAL POSITION AT EACH GATE.  MATCH THE SHAPE ON DRAWING V-1', 32, top + h + 56, v?.open ? G : GD, 18);
   }
 
   draw_override(s, now, y) {
