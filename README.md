@@ -68,33 +68,9 @@ Paper blueprints: the lobby has a "print this mission's blueprints" link (`/blue
 
 A mistake raises the alert level (the first wrong gate code is only a warning). Max out the alert level, or run out of time, and the mission fails. Each zone has a par time, shown as ahead/behind on GHOST's watch, LINE's terminal and the end screen. Three difficulties: RECRUIT / OPERATIVE / GHOST. The lobby can also start a single zone for practice.
 
-## What was challenging
+## About the project
 
-- **Every puzzle needs both players.** Each zone splits the information: GHOST sees the hardware, LINE has the drawings, cameras and terminal. Blueprints, codes, wiring, the maze and the vault are generated from a seed, so answers cannot be memorised. `npm run verify` solves 2,000 seeds to check that every zone is solvable together and that neither side can finish it alone.
-- **Reading a laser grid through a camera.** Seven gates stacked up in perspective on the CCTV feed and looked like one white mesh. Now only the gate just ahead of GHOST glows on infra-red (GHOST's torch carries IR); the rest are dim outlines.
-- **Voice across the internet.** At first every call went through the TURN relay in Oregon, which added delay. Calls now try a direct connection first and fall back to the relay, and the lobby and HUD show which route is in use (LAN / DIRECT / RELAY).
-- **Frame pacing.** On 120 Hz screens the uncapped loop swung between 120 and 30 fps. The fix was a 60 fps cap, repainting the wristwatch texture only when it changes, and updating the 3D audio listener at 30 Hz instead of every frame.
-- **A fair monster.** The first version of the creature in the escape corridor walked toward GHOST's real position, so a silent, still player was caught in 11–21 s. It now only follows sounds it hears, and a script measures time-to-catch for silent, crouching, talking and loud-radio cases (40 runs each).
-
-## What was fun
-
-- The creature hears the radio. LINE's voice comes out of GHOST's walkie-talkie, so the person in the van has to whisper the answers.
-- Watching your partner fail on camera: a strike knocks GHOST over and LINE's main monitor cuts to that zone's camera.
-- Drawing the blueprints entirely in code, down to the coffee rings, the void stamp on the old code table and the handwritten notes in the margins.
-
-## What I learned
-
-- Automated play-throughs pass while real people still get stuck. Headless tests missed the pause menu, double-clicks and reconnects (an independent review found 13 bugs), and the first human playtest found seven more: GHOST faced backwards on the cameras, the held plug blocked its own mouse ray, Tab locked the mouse, and nobody could map the vault's scope signatures to dial numbers.
-- Information has to flow both ways. Zones where only LINE talks feel like dictation, so GHOST now also holds things LINE cannot see (the check-digit sheet in the guard booth, the blinking receiver lamps, the drag of the vault dial).
-- Measure before tuning. Frame-time traces, not guesses, showed the stutter came from texture uploads and audio automation, not game logic (about 1.5 ms per frame).
-
-## Next steps
-
-- **Several teams in one facility.** Two to four LINE + GHOST teams enter from different sides and race for the single archive core, with one shared creature, one shared alarm and radios the other teams can tune into.
-- **Same-seed races.** Every team plays the same seed, with a live progress board and a daily leaderboard.
-- **Three-player squads.** One LINE handling two GHOSTs, with puzzles that need two people in two places at once (a two-dial vault, luring the creature away).
-- **Replay variety.** One or two seeded complications per run, such as a dead camera or a painted-over model plate.
-- More playtests on the LINE side: the laser hall's length and the cost of rendering several CCTV feeds.
+The hardest part was making every puzzle need both players while keeping it solvable, so all seven zones are generated from a seed and a script solves 2,000 seeds to check both sides are required; the laser grid also had to be redesigned because seven gates blurred into one mesh on the camera feed. The most fun came from the creature hearing the radio, which forces LINE to whisper the answers. The main lesson was that automated tests pass while real players still get stuck: the first playtest found a backwards avatar, a broken plug drag and a vault nobody could read. Next is a mode where several LINE + GHOST teams enter the same facility and race for one core, with radios the other teams can listen in on.
 
 ## Development
 
