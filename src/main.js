@@ -399,6 +399,8 @@ async function startGame(key) {
   let last = performance.now();
   const loop = (now) => {
     raf = requestAnimationFrame(loop);
+    // cap at ~60 fps: on 120 Hz screens an uncapped loop swings between 120 and 30 and feels choppier than a steady 60
+    if (now - last < 1000 / 64) return;
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     const t = now / 1000;

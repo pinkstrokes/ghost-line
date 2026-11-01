@@ -40,6 +40,8 @@ export class Sfx {
   setListener(pos, fwd) {
     if (!this.ctx) return;
     const L = this.ctx.listener, t = this.ctx.currentTime;
+    if (t - (this.listenerAt || 0) < 1 / 30) return; // 30 Hz is plenty; per-frame automation piles up on the audio thread
+    this.listenerAt = t;
     if (L.positionX) {
       L.positionX.setTargetAtTime(pos.x, t, 0.02); L.positionY.setTargetAtTime(pos.y, t, 0.02); L.positionZ.setTargetAtTime(pos.z, t, 0.02);
       L.forwardX.setTargetAtTime(fwd.x, t, 0.02); L.forwardY.setTargetAtTime(fwd.y, t, 0.02); L.forwardZ.setTargetAtTime(fwd.z, t, 0.02);

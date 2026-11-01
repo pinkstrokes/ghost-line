@@ -91,12 +91,17 @@ export class AgentView {
   }
 
   drawWatch(s, now) {
-    const c = this.watchCv.getContext('2d');
-    c.fillStyle = '#0d150f'; c.fillRect(0, 0, 256, 160);
-    c.fillStyle = '#9dff9a'; c.font = '700 54px "Courier New", monospace'; c.textAlign = 'center';
     let remain = s ? (s.phase === 'playing' ? s.limit - (now - s.startAt) : s.limit) : 0;
     if (s?.lockdown?.active) remain = Math.min(remain, s.escapeEnd - now);
     if (s?.practice) remain = s.lockdown?.active ? s.escapeEnd - now : 0;
+    // only repaint (and re-upload the texture) when something on the face actually changes
+    const pdk = parDelta(s, now);
+    const key = `${Math.floor(remain / 1000)}|${s?.strikes}|${s?.maxStrikes}|${s?.objective}|${pdk == null ? '' : Math.floor(pdk / 1000)}|${s?.lockdown?.active ? Math.floor(now / 400) % 2 : ''}|${s?.practice}`;
+    if (key === this.watchKey) return;
+    this.watchKey = key;
+    const c = this.watchCv.getContext('2d');
+    c.fillStyle = '#0d150f'; c.fillRect(0, 0, 256, 160);
+    c.fillStyle = '#9dff9a'; c.font = '700 54px "Courier New", monospace'; c.textAlign = 'center';
     c.fillStyle = s?.lockdown?.active ? ((now / 400) % 2 < 1 ? '#ff6a50' : '#7a2a20') : '#9dff9a';
     c.fillText(s?.practice && !s.lockdown?.active ? '--:--' : fmtTime(remain), 128, 64);
     const max = s?.maxStrikes || 5, n = s?.strikes || 0;
@@ -271,7 +276,7 @@ export class AgentView {
     this.right.position.set(0.25 + bobX * 0.5, -0.24 + bobY * 0.6 - this.watchUp * 0.08, -0.42);
     this.left.position.set(-0.3 + this.watchUp * 0.18, -0.34 + this.watchUp * 0.24 + bobY * 0.5, -0.42 + this.watchUp * 0.1);
     this.left.rotation.set(this.watchUp * 0.9, this.watchUp * 0.25, this.watchUp * -0.5);
-    if (((t * 10) | 0) % 2 === 0) this.drawWatch(s, now);
+    this.drawWatch(s, now);
     // flashlight
     const F = this.world.flash;
     const fl = (this.inspect ? new THREE.Vector3(0.05, 0.05, 0.1) : new THREE.Vector3(0.18, -0.12, -0.25)).applyQuaternion(this.cam.quaternion).add(this.cam.position);
