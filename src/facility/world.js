@@ -17,8 +17,23 @@ export const LAYER = { WORLD: 0, AVATAR: 1, IR: 2, FP: 3, SMOKE: 4, HIT: 5, HOT:
 // IR beams fade with distance from the viewing camera, so near gates pop and far ones recede
 export const IR_BEAM_MAT = new THREE.ShaderMaterial({
   vertexShader: 'varying float vD; void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); vD = -mv.z; gl_Position = projectionMatrix * mv; }',
-  fragmentShader: 'varying float vD; void main(){ float b = clamp(1.35 - vD / 16.0, 0.28, 1.0); gl_FragColor = vec4(vec3(b), 1.0); }',
+    fragmentShader: 'varying float vD; void main(){ float b = clamp(1.35 - vD / 16.0, 0.28, 1.0); gl_FragColor = vec4(vec3(b), 1.0); }',
 });
+// Laser-hall beams: lit by GHOST's IR torch. The gate or two just ahead of GHOST glow on the IR
+// feeds, everything else is a dim outline, so LINE can tell the next gate from the ones stacked
+// behind it in perspective. Close-range cylinders vanish right in front of a lens.
+const laserFrag = (near) => `uniform vec3 uG; varying float vD; varying vec3 vW;
+  void main(){
+    ${near ? 'if (vD < 2.6) discard;' : ''}
+    float ahead = uG.z - vW.z;
+    float lit = ahead > -0.6 ? 1.0 - smoothstep(3.2, 7.5, ahead) : 0.0;
+    float b = max(0.2, lit) * clamp(1.15 - vD / 40.0, 0.7, 1.0);
+    gl_FragColor = vec4(vec3(b), 1.0);
+  }`;
+const laserVert = 'varying float vD; varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; vec4 mv = viewMatrix * w; vD = -mv.z; gl_Position = projectionMatrix * mv; }';
+export const LASER_UNIFORMS = { uG: { value: new THREE.Vector3(0, 0, 0) } };
+export const LASER_LINE_MAT = new THREE.ShaderMaterial({ uniforms: LASER_UNIFORMS, vertexShader: laserVert, fragmentShader: laserFrag(false) });
+export const IR_BEAM_CYL_MAT = new THREE.ShaderMaterial({ uniforms: LASER_UNIFORMS, vertexShader: laserVert, fragmentShader: laserFrag(true) });
 
 const ROOM_LIGHTS = {
   gate: ['gate'], lasers: ['lasers'], patch: ['patch'], maze: ['maze'], optics: ['optics'], vault: ['vault'], escape: ['escape'],
@@ -115,7 +130,7 @@ export class FacilityWorld {
       if (o.geometry && !seen.has(o.geometry)) { seen.add(o.geometry); o.geometry.dispose(); }
       const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
       for (const m of mats) {
-        if (seen.has(m) || m === IR_BEAM_MAT) continue;
+        if (seen.has(m) || m === IR_BEAM_MAT || m === IR_BEAM_CYL_MAT || m === LASER_LINE_MAT) continue;
         seen.add(m);
         for (const k of ['map', 'emissiveMap']) if (m[k] && !seen.has(m[k])) { seen.add(m[k]); m[k].dispose(); }
         m.dispose();

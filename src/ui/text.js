@@ -13,7 +13,7 @@ export const OBJECTIVES = {
   lasers: {
     short: 'IR GRID',
     agent: 'The hall is wired with an infra-red grid you can\'t see. Follow LINE: lanes A–D on the floor, row numbers on the walls. C to crouch, Space to jump.',
-    handler: 'The lasers only show up in infra-red. Put CAM-03 / CAM-02 on the main monitor, press I, and talk GHOST through the grid.',
+    handler: 'The lasers only show up in infra-red (press I on CAM-03 / CAM-02). The gate right in front of GHOST glows — GHOST\'s torch carries IR. CAM-02 looks back, so its left and right are flipped.',
   },
   patch: {
     short: 'RESTORE POWER',

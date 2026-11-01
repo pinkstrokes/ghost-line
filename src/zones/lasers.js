@@ -3,7 +3,7 @@ import { Builder, PAL, stencilText } from '../engine/kit.js';
 import { room, fixture, emergencyLamp, drawSign, drawStencil, cameraProp, pipeRun, cableTray, debris, papers } from '../facility/props.js';
 import { HALL, HALL_CHECKPOINT, CAMERAS } from '../../shared/layout.js';
 import { activeBeams, beamHit } from '../../shared/mission.js';
-import { IR_BEAM_MAT } from '../facility/world.js';
+import { IR_BEAM_CYL_MAT, LASER_LINE_MAT, LASER_UNIFORMS } from '../facility/world.js';
 
 // Laser hall. Beams live on the IR layer only: GHOST never sees them, LINE sees them on the IR cameras.
 
@@ -98,12 +98,12 @@ export function buildLasers(world) {
   const pos = new Float32Array(MAXB * 6);
   const lg = new THREE.BufferGeometry();
   lg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const lines = new THREE.LineSegments(lg, IR_BEAM_MAT);
+  const lines = new THREE.LineSegments(lg, LASER_LINE_MAT);
   lines.frustumCulled = false;
   lines.layers.set(2);
   world.scene.add(lines);
   const cylGeo = new THREE.CylinderGeometry(0.025, 0.025, 1, 6, 1, true);
-  const cylMat = IR_BEAM_MAT;
+  const cylMat = IR_BEAM_CYL_MAT;
   const cyls = Array.from({ length: MAXB }, () => {
     const c = new THREE.Mesh(cylGeo, cylMat);
     c.layers.set(2);
@@ -140,6 +140,9 @@ export function buildLasers(world) {
       const armed = s && s.phase === 'playing' && !s.lasers.cleared;
       const beams = armed || !s || s.phase !== 'playing' ? activeBeams(L, st) : [];
       setBeams(beams);
+      // GHOST's IR torch lights the gate just ahead (outside the hall: treat GHOST as at the door)
+      const gp = world.avatar?.group?.visible ? world.avatar.group.position : world.agentBody;
+      LASER_UNIFORMS.uG.value.set(gp?.x ?? 0, 0, Math.min(gp?.z ?? 0, -0.5));
       // GHOST side trip detection
       const body = world.agentBody;
       if (!body || !armed) return;

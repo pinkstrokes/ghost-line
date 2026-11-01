@@ -159,7 +159,7 @@ function site(ctx, m) {
   ];
   table(ctx, 420, 166, [{ w: 18, title: 'DOOR' }, { w: 80, title: 'TYPE' }, { w: 120, title: 'RELEASE' }], doorRows, { rowH: 8.5, size: 3.4 });
   hand(ctx, 'hall rows start at the door:\n01 nearest, 12 at the far end.\nlanes A–D left to right\nlooking IN from the door', 440, 270, 7.5, { rot: -0.03 });
-  hand(ctx, 'C02 looks back at the door.\nleft/right are FLIPPED on it!', 600, 330, 7, { rot: 0.04 });
+  hand(ctx, 'the gate in front of GHOST lights up\n(their torch has IR). C02 looks back\nat the door: left/right FLIPPED!', 600, 330, 7, { rot: 0.04 });
   hand(ctx, 'spine = smoke.\nonly the IR cams\nsee through it', 450, 400, 7.5, { rot: 0.02 });
   hand(ctx, 'if the undercroft thing\nfollows them out — it shows\nBLACK on thermal (cold). it\nhears the radio. go QUIET.', 590, 405, 7, { rot: -0.03 });
   titleBlock(ctx, { sheet: 'A-1', title: 'SITE & GROUND FLOOR PLAN', sub: 'CCTV + DOOR SCHEDULES', rev: 'C' });
